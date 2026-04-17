@@ -1,2 +1,2 @@
-# AlpakaNN
-## MNIST recognizing Neural Network using the performance portability library alpaka.
+# NeuralNet
+## MNIST recognizing Neural Network.
