@@ -71,6 +71,7 @@ float &Tensor::operator()(const std::size_t i){
 
 
 const float &Tensor::operator()(const std::size_t i, const std::size_t j) const {
+    // the operator should only be called on 2D tensors
     if(m_shape.size() < 2){
         throw std::invalid_argument("Too many arguments given");
     }
@@ -134,5 +135,79 @@ std::ostream &operator<<(std::ostream &os, const Tensor &obj){
     output += "]";
     os << output;
     return os;
+
+}
+
+// TODO: sum of Tensors of different dimensions implemented, a bit sus
+std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
+    // figure out the dimensions of the operands
+    auto dim1 = m_shape.size();
+    auto other_shape = other->shape();
+    auto dim2 = other_shape.size();
+    // scalar + scalar : summing the values 
+    if(dim1 == 0 && dim2 == 0){
+        float result = item() + other->item();
+    }
+    // scalar + 1D: adding the scalar to each element of the 1D tensor
+    if(dim1 == 0 && dim2 == 1){
+        std::vector<float> result;
+        for(auto i = 0; i < other_shape[0]; ++i){
+            result.push_back(item() + (*other)(i)):
+        }
+    }
+    // scalard + 2D: adding the scalar to each element of the 2D tensor
+    if(dim1 == 0 && dim2 == 2){
+        auto rows = other_shape[0];
+        auto cols = other_shape[1];
+        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
+        for(auto i = 0; i < rows; ++i){
+            for(auto j = 0; j < cols; ++j){
+                result[i][j] = item() + (*other)(i,j);
+            }
+        }
+    }
+    // 1D + scalar: adding the scalar to each element of the 1D tensor
+    if(dim1 == 1 && dim2 == 0){
+        std::vector<float> result;
+        for(auto i = 0; i < shape()[0]; ++i){
+            result.push_back(m_data[i] + other->item()):
+        }
+    }
+    // 2D + scalar: adding the scalar to each element of the 2D tensor
+    if(dim1 == 2 && dim2 == 0){
+        auto rows = m_shape[0];
+        auto cols = m_shape[1];
+        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
+        for(auto i = 0; i < rows; ++i){
+            for(auto j = 0; j < cols; ++j){
+                result[i][j] = other->item() + m_data[i*m_stride + j];
+            }
+        }
+    }
+    // 1D + 1D: classic vector addition
+    if(dim1 == 1 && dim2 == 1){
+        if(size() != other->size()){
+            throw std::runtime_error("The two 1D tensors have different sizes");
+        }
+        std::vector<float> result;
+        for(auto i = 0; i < size(); ++i){
+            result.push_back(m_data[i] + (*other)(i));
+        }
+    }
+    // 2D + 2D: classic vector addition
+    if(dim1 == 2 && dim2 == 2){
+        if(m_stride != other->shape()[0] || size() != other->size()){
+            throw std::runtime_error("The two 2D tensors have different sizes");
+        }
+        auto rows = m_shape[0];
+        auto cols = m_shape[1];
+        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
+        for(auto i = 0; i < rows; ++i){
+            for(auto j = 0; j < cols; ++j){
+                result[i][j] = (*other)(i,j) + m_data[i*m_stride + j];
+            }
+        }
+    }
+
 
 }

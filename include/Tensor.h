@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <iostream>
+#include <memory>
 
 class Tensor {
 private:
@@ -20,9 +21,11 @@ public:
         const float &operator()(const std::size_t i, const std::size_t j) const; // 2D read only
         float &operator()(const std::size_t i, const std::size_t j); // 2D write
         const std::size_t size() const{ return m_data.size(); }
-        const std::vector<int> &shape() const{ return m_shape;}
-        const int &stride() const{ return m_stride;}
+        const std::vector<int> &shape() const{ return m_shape; }
+        const int &stride() const{ return m_stride; }
+        const std::vector<float> &getData() const{ return m_data; }
         friend std::ostream &operator<<(std::ostream &os, const Tensor &obj);
+        std::shared_ptr<Tensor> operator+(std::shared_ptr<Tensor> other);
 };
 
 #endif
