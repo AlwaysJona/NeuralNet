@@ -147,13 +147,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
     // scalar + scalar : summing the values 
     if(dim1 == 0 && dim2 == 0){
         float result = item() + other->item();
+        return std::make_shared<Tensor>(result);
     }
     // scalar + 1D: adding the scalar to each element of the 1D tensor
     if(dim1 == 0 && dim2 == 1){
         std::vector<float> result;
         for(auto i = 0; i < other_shape[0]; ++i){
-            result.push_back(item() + (*other)(i)):
+            result.push_back(item() + (*other)(i));
         }
+        return std::make_shared<Tensor>(result);
     }
     // scalard + 2D: adding the scalar to each element of the 2D tensor
     if(dim1 == 0 && dim2 == 2){
@@ -165,13 +167,15 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
                 result[i][j] = item() + (*other)(i,j);
             }
         }
+        return std::make_shared<Tensor>(result);
     }
     // 1D + scalar: adding the scalar to each element of the 1D tensor
     if(dim1 == 1 && dim2 == 0){
         std::vector<float> result;
         for(auto i = 0; i < shape()[0]; ++i){
-            result.push_back(m_data[i] + other->item()):
+            result.push_back(m_data[i] + other->item());
         }
+        return std::make_shared<Tensor>(result);
     }
     // 2D + scalar: adding the scalar to each element of the 2D tensor
     if(dim1 == 2 && dim2 == 0){
@@ -183,6 +187,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
                 result[i][j] = other->item() + m_data[i*m_stride + j];
             }
         }
+        return std::make_shared<Tensor>(result);
     }
     // 1D + 1D: classic vector addition
     if(dim1 == 1 && dim2 == 1){
@@ -193,6 +198,8 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
         for(auto i = 0; i < size(); ++i){
             result.push_back(m_data[i] + (*other)(i));
         }
+
+        return std::make_shared<Tensor>(result);
     }
     // 2D + 2D: classic vector addition
     if(dim1 == 2 && dim2 == 2){
@@ -207,6 +214,7 @@ std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
                 result[i][j] = (*other)(i,j) + m_data[i*m_stride + j];
             }
         }
+        return std::make_shared<Tensor>(result);
     }
 
 
