@@ -4,7 +4,7 @@
 ## Build and Run
 ### Requirements
 - C++17 compatible compiler (GCC / Clang / MSVC)
-- CMake ≥ 3.10
+- CMake >= 3.10
 - Make (or Ninja, depending on your system)
 
 ### Clone the repository
