@@ -4,8 +4,17 @@ Tensor::Tensor(const float data) : m_data{data}, m_shape{}, m_stride{} {};
 
 Tensor::Tensor(const std::vector<float> &data) : m_data{data}, m_shape{data.size()}, m_stride{1} {};
 
-Tensor::Tensor(const std::vector<std::vector<float>> &data) : m_shape{data.size(), data[0].size()}, m_stride{data[0].size()} {
-    
+Tensor::Tensor(const std::vector<std::vector<float>> &data) {
+    if(data.empty()){
+        throw std::invalid_argument("Can't create 2D Tensor from empty vector");
+    }
+    if(data[0].empty()){
+        throw std::invalid_argument("Can't create 2D Tensor with no columns");
+    }
+
+    m_shape = {data.size(), data[0].size()};
+    m_stride = data[0].size();
+
 // Check if all the rows of the tensor have the same size        
     for(std::size_t i = 0; i < data.size(); ++i){
         if(data[i].size() != m_stride) {
@@ -19,6 +28,36 @@ Tensor::Tensor(const std::vector<std::vector<float>> &data) : m_shape{data.size(
     }
 
 }
+
+Tensor::Tensor(const std::vector<float> &data, const std::vector<std::size_t> &shape) : m_data{data}, m_shape{shape} {
+
+    if (m_shape.empty()) {
+        if (m_data.size() != 1) {
+            throw std::invalid_argument("Scalar tensor must contain exactly one value");
+        }
+        m_stride = 0;
+        return;
+    }
+
+    std::size_t expected_size = 1;
+    for (auto dim : m_shape) {
+        expected_size *= dim;
+    }
+
+    if (expected_size != m_data.size()) {
+        throw std::invalid_argument("Data size does not match tensor shape");
+    }
+
+    if (m_shape.size() == 1) {
+        m_stride = 1; // 1D Tensor
+    } else if (m_shape.size() == 2) {
+        m_stride = m_shape[1]; // 2D Tensor
+    } else {
+        throw std::invalid_argument("Only scalar, 1D, and 2D tensors are currently supported");
+    }
+
+}
+
 
 const float &Tensor::item() const {
     
@@ -139,83 +178,56 @@ std::ostream &operator<<(std::ostream &os, const Tensor &obj){
 }
 
 // TODO: sum of Tensors of different dimensions implemented, a bit sus
-std::shared_ptr<Tensor> Tensor::operator+(std::shared_ptr<Tensor> other){
+Tensor Tensor::operator+(const Tensor& other) const {
     // figure out the dimensions of the operands
     auto dim1 = m_shape.size();
-    auto other_shape = other->shape();
+    auto other_shape = other.shape();
     auto dim2 = other_shape.size();
-    // scalar + scalar : summing the values 
-    if(dim1 == 0 && dim2 == 0){
-        float result = item() + other->item();
-        return std::make_shared<Tensor>(result);
-    }
-    // scalar + 1D: adding the scalar to each element of the 1D tensor
-    if(dim1 == 0 && dim2 == 1){
-        std::vector<float> result;
-        for(auto i = 0; i < other_shape[0]; ++i){
-            result.push_back(item() + (*other)(i));
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    // scalard + 2D: adding the scalar to each element of the 2D tensor
-    if(dim1 == 0 && dim2 == 2){
-        auto rows = other_shape[0];
-        auto cols = other_shape[1];
-        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
-        for(auto i = 0; i < rows; ++i){
-            for(auto j = 0; j < cols; ++j){
-                result[i][j] = item() + (*other)(i,j);
-            }
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    // 1D + scalar: adding the scalar to each element of the 1D tensor
-    if(dim1 == 1 && dim2 == 0){
-        std::vector<float> result;
-        for(auto i = 0; i < shape()[0]; ++i){
-            result.push_back(m_data[i] + other->item());
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    // 2D + scalar: adding the scalar to each element of the 2D tensor
-    if(dim1 == 2 && dim2 == 0){
-        auto rows = m_shape[0];
-        auto cols = m_shape[1];
-        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
-        for(auto i = 0; i < rows; ++i){
-            for(auto j = 0; j < cols; ++j){
-                result[i][j] = other->item() + m_data[i*m_stride + j];
-            }
-        }
-        return std::make_shared<Tensor>(result);
-    }
-    // 1D + 1D: classic vector addition
-    if(dim1 == 1 && dim2 == 1){
-        if(size() != other->size()){
-            throw std::runtime_error("The two 1D tensors have different sizes");
-        }
-        std::vector<float> result;
-        for(auto i = 0; i < size(); ++i){
-            result.push_back(m_data[i] + (*other)(i));
-        }
 
-        return std::make_shared<Tensor>(result);
-    }
-    // 2D + 2D: classic vector addition
-    if(dim1 == 2 && dim2 == 2){
-        if(m_stride != other->shape()[0] || size() != other->size()){
-            throw std::runtime_error("The two 2D tensors have different sizes");
-        }
-        auto rows = m_shape[0];
-        auto cols = m_shape[1];
-        std::vector<std::vector<float>> result(rows, std::vector<float>(cols));
-        for(auto i = 0; i < rows; ++i){
-            for(auto j = 0; j < cols; ++j){
-                result[i][j] = (*other)(i,j) + m_data[i*m_stride + j];
+
+    auto other_size = other.size();
+
+    const bool this_scalar = m_shape.empty();
+    const bool other_scalar = other.shape().empty();
+
+    std::vector<float> result;
+    std::vector<std::size_t> new_shape;
+    
+    if(this_scalar){
+        if(other_scalar){
+            result.push_back(item() + other.item());
+        } else {
+            for(std::size_t i = 0; i < other_size; ++i){
+                result.push_back(item() + other.data()[i]);
             }
+            new_shape = other.shape();
         }
-        return std::make_shared<Tensor>(result);
+    } else if(other_scalar){
+        for(std::size_t i = 0; i < size(); ++i){
+            result.push_back(m_data[i] + other.item());
+        }
+        new_shape = m_shape;
+    } else if(m_shape == other.shape()){
+            for(std::size_t i = 0; i < size(); ++i){
+                result.push_back(m_data[i] + other.data()[i]);
+            }
+            new_shape = m_shape;
     }
+    else {
+        throw std::invalid_argument("These Tensor shapes can't be added");
+    }
+
+    return Tensor(result, new_shape);
+    
 
 
 }
+
+/*Tensor Tensor::operator*(const Tensor& other){
+
+    if(m_shape.[m_shape.size() -1] != other.shape()[0]){
+        throw std::invalid argument("Last dim of first is different than first dim of second");
+    
+    // 1d x 1d
+
+}*/
