@@ -34,4 +34,10 @@ After a successful build, run the executable:
 ```bash
 ./neural
 ```
+### Run Tests
+After a successful build, run the tests:
+
+```bash
+./tests/tests
+```
 
