@@ -96,7 +96,17 @@ TEST_CASE("Element wise multiplication"){
     CHECK_EQ(t6(2), doctest::Approx(10));
     CHECK_EQ(t6(3), doctest::Approx(12));
     // TODO: Check all the cases
-
-
 }
 
+TEST_CASE("Matrix Multiplication"){
+    std::vector<float> v1 = {1, 2, 3, 4, 5};
+    std::vector<float> v2 = {2, 4, 6, 8, 10};
+
+    Tensor t1 = Tensor(v1);
+    Tensor t2 = Tensor(v2);
+
+    Tensor t12 = t1.matmul(t2);
+
+    CHECK_EQ(t12.item(), doctest::Approx(110));
+    // TODO: Write at least the bare minimum cases
+}

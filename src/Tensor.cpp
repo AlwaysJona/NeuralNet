@@ -249,7 +249,75 @@ Tensor Tensor::operator*(const Tensor& other) const {
     }
 
     return Tensor(result, new_shape);
+}
+
+Tensor Tensor::matmul(const Tensor& other) const {
+    auto this_dims = m_shape.size();
+    auto other_dims = other.shape().size();
+
+    if(this_dims == 0 || other_dims == 0){
+        throw std::invalid_argument("Both arguments need to be at least 1D");
+    }
+    if(m_shape[this_dims - 1] != other.shape()[0]){
+        throw std::invalid_argument("The last dimension of the 1st tensor isn't the same as the first dimension of the 2nd tensor");
+    }
     
+    std::vector<float> result;
+    std::vector<std::size_t> new_shape;
+    // 1D x 1D = Scalar
+    if(this_dims == 1 && other_dims == 1){
+        float acc = 0;
+        for(std::size_t i = 0; i < size(); ++i){
+            acc += m_data[i] * other(i);
+        }
+        result.push_back(acc);
+    }
+    // 1D x 2D = 1D -> (m) x (m, k) = (k)
+    if(this_dims == 1 && other_dims == 2){
+        auto m = size();
+        auto k = other.stride();
+        new_shape = {k};
+        for(std::size_t i = 0; i < k; ++i){
+            float result_i = 0;
+            for(std::size_t j = 0; j < m; ++j){
+                result_i += m_data[j] + other(j,i);
+            }
+            result.push_back(result_i);
+        }
+    }
+    // 2D x 1D = 1D -> (k,m) x (m) = (k)
+    if(this_dims == 2 && other_dims == 1){
+        auto m = m_stride;
+        auto k = other.size();
+        new_shape = {k};
+        for(std::size_t i = 0; i < k; ++i){
+            float result_i = 0;
+            for(std::size_t j = 0; j < m; ++j){
+                result_i += (*this)(i,j) + other(j);
+            }
+            result.push_back(result_i);
+        }
+    }
+    // 2D x 2D = 2D -> (k,m) x (m,l) = (k,l)
+    if(this_dims == 2 && other_dims == 2){
+        auto k = shape()[0];
+        auto m = m_stride;
+        auto l = other.stride();
+        new_shape = {k,l};
+        for(std::size_t i = 0; i < k; ++i){
+            for(std::size_t j = 0; j < l; j++){
+                float sum = 0;
+                for(std::size_t t = 0; t < m; ++t){
+                    sum += (*this)(i,t) * other(t,j);
+                }
+                result.push_back(sum);
+            }
+        }
+    }
 
+    else if(this_dims > 2 || other_dims > 2){
+        throw std::invalid_argument("matmul only supported for 1D or 2D tensors");
+    }
 
+    return Tensor(result, new_shape);
 }

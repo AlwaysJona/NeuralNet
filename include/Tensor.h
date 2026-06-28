@@ -33,7 +33,8 @@ public:
  
         Tensor operator+(const Tensor& other) const;
         Tensor operator*(const Tensor& other) const; // element wise multiplication
-        
+        Tensor matmul(const Tensor& other) const; // matrix multiplication
+
         friend std::ostream &operator<<(std::ostream &os, const Tensor &obj);
 };
 
