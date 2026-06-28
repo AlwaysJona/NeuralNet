@@ -71,7 +71,32 @@ TEST_CASE("Tensor Addition"){
     CHECK_EQ(t6(1), doctest::Approx(6));
     CHECK_EQ(t6(2), doctest::Approx(7));
     CHECK_EQ(t6(3), doctest::Approx(8));
-
+    // TODO: Check all the cases
     
+}
+
+TEST_CASE("Element wise multiplication"){
+    Tensor t1 = Tensor(2);
+    Tensor t2 = Tensor(5);
+    Tensor t3 = t1 * t2;
+    CHECK_EQ(t3.item(), 10);
+    
+    std::vector<float> v = {3, 4, 5, 6};
+
+    Tensor t4 = Tensor(v);
+    Tensor t5 = t1 * t4;
+    CHECK_EQ(t5(0), doctest::Approx(6));
+    CHECK_EQ(t5(1), doctest::Approx(8));
+    CHECK_EQ(t5(2), doctest::Approx(10));
+    CHECK_EQ(t5(3), doctest::Approx(12));
+
+    Tensor t6 = t4 * t1;
+    CHECK_EQ(t6(0), doctest::Approx(6));
+    CHECK_EQ(t6(1), doctest::Approx(8));
+    CHECK_EQ(t6(2), doctest::Approx(10));
+    CHECK_EQ(t6(3), doctest::Approx(12));
+    // TODO: Check all the cases
+
+
 }
 

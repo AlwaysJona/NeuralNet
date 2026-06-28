@@ -92,7 +92,7 @@ const float &Tensor::operator()(const std::size_t i) const {
         }
         return m_data[i];
     }
-    throw std::invalid_argument("This is a 1D tensor");
+    throw std::invalid_argument("Expected 1D tensor");
 }
 
 float &Tensor::operator()(const std::size_t i){
@@ -105,14 +105,14 @@ float &Tensor::operator()(const std::size_t i){
         }
         return m_data[i];
     }
-    throw std::invalid_argument("This is a 1D tensor");
+    throw std::invalid_argument("Expected 1D tensor");
 }
 
 
 const float &Tensor::operator()(const std::size_t i, const std::size_t j) const {
     // the operator should only be called on 2D tensors
     if(m_shape.size() < 2){
-        throw std::invalid_argument("Too many arguments given");
+        throw std::invalid_argument("Expected 2D Tensor");
     }
     else{
         if(i >= m_shape[0] || j >= m_shape[1]){
@@ -126,7 +126,7 @@ const float &Tensor::operator()(const std::size_t i, const std::size_t j) const 
 
 float &Tensor::operator()(const std::size_t i,const std::size_t j) {
     if(m_shape.size() < 2){
-        throw std::invalid_argument("Too many arguments given");
+        throw std::invalid_argument("Expected 2D Tensor");
     }
     else{
         if(i >= m_shape[0] || j >= m_shape[1]){
@@ -179,14 +179,7 @@ std::ostream &operator<<(std::ostream &os, const Tensor &obj){
 
 // TODO: sum of Tensors of different dimensions implemented, a bit sus
 Tensor Tensor::operator+(const Tensor& other) const {
-    // figure out the dimensions of the operands
-    auto dim1 = m_shape.size();
-    auto other_shape = other.shape();
-    auto dim2 = other_shape.size();
-
-
     auto other_size = other.size();
-
     const bool this_scalar = m_shape.empty();
     const bool other_scalar = other.shape().empty();
 
@@ -223,11 +216,40 @@ Tensor Tensor::operator+(const Tensor& other) const {
 
 }
 
-/*Tensor Tensor::operator*(const Tensor& other){
+Tensor Tensor::operator*(const Tensor& other) const {
+    auto other_size = other.size();
+    const bool this_scalar = m_shape.empty();
+    const bool other_scalar = other.shape().empty();
 
-    if(m_shape.[m_shape.size() -1] != other.shape()[0]){
-        throw std::invalid argument("Last dim of first is different than first dim of second");
+    std::vector<float> result;
+    std::vector<std::size_t> new_shape;
     
-    // 1d x 1d
+    if(this_scalar){
+        if(other_scalar){
+            result.push_back(item() * other.item());
+        } else {
+            for(std::size_t i = 0; i < other_size; ++i){
+                result.push_back(item() * other.data()[i]);
+            }
+            new_shape = other.shape();
+        }
+    } else if(other_scalar){
+        for(std::size_t i = 0; i < size(); ++i){
+            result.push_back(m_data[i] * other.item());
+        }
+        new_shape = m_shape;
+    } else if(m_shape == other.shape()){
+            for(std::size_t i = 0; i < size(); ++i){
+                result.push_back(m_data[i] * other.data()[i]);
+            }
+            new_shape = m_shape;
+    }
+    else {
+        throw std::invalid_argument("These Tensor shapes are incompatible for element wise multiplication");
+    }
 
-}*/
+    return Tensor(result, new_shape);
+    
+
+
+}

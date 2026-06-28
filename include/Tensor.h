@@ -1,9 +1,8 @@
-#ifndef TENSOR
-#define TENSOR
+#ifndef TENSOR_H
+#define TENSOR_H
 
 #include <vector>
 #include <iostream>
-#include <memory>
 
 class Tensor {
 private:
@@ -31,9 +30,11 @@ public:
         const std::vector<std::size_t> &shape() const{ return m_shape; }
         const std::size_t &stride() const{ return m_stride; }
         const std::vector<float> &data() const{ return m_data; }
-        friend std::ostream &operator<<(std::ostream &os, const Tensor &obj);
+ 
         Tensor operator+(const Tensor& other) const;
-        // Tensor operator*(const Tensor& other);
+        Tensor operator*(const Tensor& other) const; // element wise multiplication
+        
+        friend std::ostream &operator<<(std::ostream &os, const Tensor &obj);
 };
 
 #endif
