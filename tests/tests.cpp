@@ -108,5 +108,28 @@ TEST_CASE("Matrix Multiplication"){
     Tensor t12 = t1.matmul(t2);
 
     CHECK_EQ(t12.item(), doctest::Approx(110));
+
+    std::vector<float> v3 = {1,2,3,4,5,6}; // 1 2
+                                           // 3 4
+                                           // 5 6 
+    std::vector<std::size_t> shape1 = {3, 2};
+
+    std::vector<float> v4 = {1,2,3,4,5,6}; // 1 2 3
+                                           // 4 5 6
+    std::vector<std::size_t> shape2 = {2,3};
+
+    Tensor t3 = Tensor(v3, shape1);
+    Tensor t4 = Tensor(v4, shape2);
+    Tensor t34 = t3.matmul(t4);
+
+    CHECK_EQ(t34(0,0), doctest::Approx(9));
+    CHECK_EQ(t34(0,1), doctest::Approx(12));
+    CHECK_EQ(t34(0,2), doctest::Approx(15));
+    CHECK_EQ(t34(1,0), doctest::Approx(19));
+    CHECK_EQ(t34(1,1), doctest::Approx(26));
+    CHECK_EQ(t34(1,2), doctest::Approx(33));
+    CHECK_EQ(t34(2,0), doctest::Approx(29));
+    CHECK_EQ(t34(2,1), doctest::Approx(40));
+    CHECK_EQ(t34(2,2), doctest::Approx(51));
     // TODO: Write at least the bare minimum cases
 }
