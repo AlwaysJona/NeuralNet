@@ -26,20 +26,29 @@ Tensor::Node::Node(std::vector<float> data,
     m_stride(compute_stride(m_shape)),
     m_grad(m_data.size(), 0.0f), 
     m_requires_grad(requires_grad),
-    m_gradfn(nullptr),
+    m_gradfn([](){}),
     m_parents{} {}
 
 Tensor::Tensor(const float data, bool requires_grad,
-        std::function<void(const std::vector<float>&)> gradfn,
-        std::vector<std::shared_ptr<Tensor>> parents)
+        std::function<void()> gradfn,
+        std::vector<std::shared_ptr<Node>> parents)
                                         : m_node(std::make_shared<Node>(
                                         std::vector<float>{data},
                                         std::vector<std::size_t>{},
-                                        requires_grad)) {};
+                                        requires_grad)) {
+
+    if(requires_grad) {
+        zero_grad();
+    }
+
+    m_node->m_gradfn = gradfn;
+    m_node->m_parents = parents;
+
+}
 
 Tensor::Tensor(const std::vector<float> &data, bool requires_grad,
-        std::function<void(const std::vector<float>&)> gradfn,
-        std::vector<std::shared_ptr<Tensor>> parents) {
+        std::function<void()> gradfn,
+        std::vector<std::shared_ptr<Node>> parents) {
     if(data.empty()){
         throw std::invalid_argument("Cannot create Tensor from empty vector");
     }
@@ -48,11 +57,20 @@ Tensor::Tensor(const std::vector<float> &data, bool requires_grad,
             data,
             std::vector<size_t>{data.size()},
             requires_grad);
+    
+    if(requires_grad) {
+        zero_grad();
+    }
+
+    m_node->m_gradfn = gradfn;
+    m_node->m_parents = parents;
+
+
 }
 
 Tensor::Tensor(const std::vector<std::vector<float>> &data, bool requires_grad,
-        std::function<void(const std::vector<float>&)> gradfn,
-        std::vector<std::shared_ptr<Tensor>> parents) {
+        std::function<void()> gradfn,
+        std::vector<std::shared_ptr<Node>> parents) {
     if(data.empty()){
         throw std::invalid_argument("Can't create 2D Tensor from empty vector");
     }
@@ -78,11 +96,17 @@ Tensor::Tensor(const std::vector<std::vector<float>> &data, bool requires_grad,
 
     m_node = std::make_shared<Node>(node_data, shape, requires_grad);
 
+    if(requires_grad) {
+        zero_grad();
+    }
+
+    m_node->m_gradfn = gradfn;
+    m_node->m_parents = parents;
 }
 
 Tensor::Tensor(const std::vector<float> &data, const std::vector<std::size_t> &shape, bool requires_grad,
-        std::function<void(const std::vector<float>&)> gradfn,
-        std::vector<std::shared_ptr<Tensor>> parents) {
+        std::function<void()> gradfn,
+        std::vector<std::shared_ptr<Node>> parents) {
     if(shape.size() > 2) {
         throw std::invalid_argument("Only scalar, 1D and 2D tensors are currently supported");
     }
@@ -97,6 +121,14 @@ Tensor::Tensor(const std::vector<float> &data, const std::vector<std::size_t> &s
     }
 
     m_node = std::make_shared<Node>(data, shape, requires_grad);
+
+    if(requires_grad) {
+        zero_grad();
+    }
+
+    m_node->m_gradfn = gradfn;
+    m_node->m_parents = parents;
+
 }
 
 
@@ -218,7 +250,6 @@ std::ostream &operator<<(std::ostream &os, const Tensor &obj){
 
 }
 
-// TODO: sum of Tensors of different dimensions implemented, a bit sus
 Tensor Tensor::operator+(const Tensor& other) const {
     auto other_size = other.size();
     const bool this_scalar = m_node->m_shape.empty();
@@ -227,34 +258,78 @@ Tensor Tensor::operator+(const Tensor& other) const {
     std::vector<float> result;
     std::vector<std::size_t> new_shape;
     
+    // addition logic for sums of Tensors
+
     if(this_scalar){
-        if(other_scalar){
+        if(other_scalar){ // scalar + scalar
             result.push_back(item() + other.item());
-        } else {
+        } else { // scalar + 1D or scalar + 2D
             for(std::size_t i = 0; i < other_size; ++i){
                 result.push_back(item() + other.data()[i]);
             }
-            new_shape = other.shape(); // TODO: need to be empty vector, other.shape() is not clear
+            new_shape = other.shape(); 
         }
-    } else if(other_scalar){
+    } else if(other_scalar){ // 1D + scalar or 2D + scalar
         for(std::size_t i = 0; i < size(); ++i){
             result.push_back(m_node->m_data[i] + other.item());
         }
         new_shape = m_node->m_shape;
-    } else if(m_node->m_shape == other.shape()){
+    } else if(m_node->m_shape == other.shape()){ // 1D + 1D or 2D + 2D
             for(std::size_t i = 0; i < size(); ++i){
                 result.push_back(m_node->m_data[i] + other.data()[i]);
             }
             new_shape = m_node->m_shape;
     }
-    else {
+    else { // 1D + 2D or 2D + 1D, or higher dimensions
         throw std::invalid_argument("These Tensor shapes can't be added");
     }
 
-    return Tensor(result, new_shape, false);
+    // gradient logic
+
+    auto this_node = m_node;
+    auto other_node = other.m_node;
+    const bool req_grad = this_node->m_requires_grad || other_node->m_requires_grad;
     
+    Tensor out(result, new_shape, req_grad);
+    
+    if(req_grad) {
+        auto out_node = out.m_node;
 
+        out_node->m_parents = {this_node, other_node};
+        out_node->m_gradfn =
+            [this_node, other_node, out_node, this_scalar, other_scalar]() {
+                for(std::size_t i = 0; i < out_node->m_data.size(); ++i) {
+                    const float g = out_node->m_grad[i];
+                    
+                    // c = a + b
+                    // dc/da = 1    and    dc/db = 1
+                    // if Loss = c
+                    // dLoss/da = dLoss/dc * dc/da
+                    // dLoss/db = dLoss/dc * dc/db
+                    // in this context dLoss/dc = g
 
+                    // propagate gradient to parents
+                    if(this_node->m_requires_grad){
+                        if(this_scalar){
+                            this_node->m_grad[0] += g;
+                        }
+                        else{
+                            this_node->m_grad[i] += g;
+                        }
+                    }
+                    
+                    if(other_node->m_requires_grad){
+                        if(other_scalar){
+                            other_node->m_grad[0] += g;
+                        }
+                        else{
+                            other_node->m_grad[i] += g;
+                        }
+                    }
+                }
+            };
+    }
+    return out;
 }
 
 Tensor Tensor::operator*(const Tensor& other) const {
@@ -264,7 +339,8 @@ Tensor Tensor::operator*(const Tensor& other) const {
 
     std::vector<float> result;
     std::vector<std::size_t> new_shape;
-    
+   
+    // multiplication logic
     if(this_scalar){
         if(other_scalar){
             result.push_back(item() * other.item());
@@ -289,9 +365,59 @@ Tensor Tensor::operator*(const Tensor& other) const {
         throw std::invalid_argument("These Tensor shapes are incompatible for element wise multiplication");
     }
 
-    return Tensor(result, new_shape, false);
+    auto this_node = m_node;
+    auto other_node = other.m_node;
+
+    const bool req_grad = this_node->m_requires_grad || other_node->m_requires_grad;
+    Tensor out(result, new_shape, req_grad);
+
+    // gradient logic
+    if(req_grad){
+        auto out_node = out.m_node;
+    
+        out_node->m_parents = {this_node, other_node};
+
+        out_node->m_gradfn = 
+            [this_node, other_node, out_node, this_scalar, other_scalar]() {
+                for(std::size_t i = 0; i < out_node->m_data.size(); ++i) {
+                    const float g = out_node->m_grad[i];
+                
+                    // c = a * b
+                    // dc/da = b    and    dc/db = a
+                    // and if Loss = c
+                    // dLoss/da = dLoss/dc * dc/da
+                    // and
+                    // dLoss/db = dLoss/dc * dc/db
+                    // in this contex dLoss/dc = g
+                    
+                    // propagate gradient to parents
+                    const float this_value = this_scalar ? this_node->m_data[0] : this_node->m_data[i];
+                    const float other_value = other_scalar ? other_node->m_data[0] : other_node->m_data[i];
+
+                    if(this_node->m_requires_grad) {
+                        if(this_scalar) {
+                            this_node->m_grad[0] += g * other_value;
+                        }
+                        else {
+                            this_node->m_grad[i] += g * other_value;
+                        }
+                    }
+
+                    if(other_node->m_requires_grad) {
+                        if(other_scalar) {
+                            other_node->m_grad[0] += g * this_value;
+                        }
+                        else {
+                            other_node->m_grad[i] += g * this_value;
+                        }
+                    }
+                }
+            };
+    }
+    return out;
 }
 
+// TODO: add gradient logic
 Tensor Tensor::matmul(const Tensor& other) const {
     auto this_dims = m_node->m_shape.size();
     auto other_dims = other.shape().size();
@@ -321,7 +447,7 @@ Tensor Tensor::matmul(const Tensor& other) const {
         for(std::size_t i = 0; i < k; ++i){
             float result_i = 0;
             for(std::size_t j = 0; j < m; ++j){
-                result_i += m_node->m_data[j] + other(j,i);
+                result_i += m_node->m_data[j] * other(j,i);
             }
             result.push_back(result_i);
         }
@@ -329,12 +455,12 @@ Tensor Tensor::matmul(const Tensor& other) const {
     // 2D x 1D = 1D -> (k,m) x (m) = (k)
     if(this_dims == 2 && other_dims == 1){
         auto m = m_node->m_stride;
-        auto k = other.size();
+        auto k = shape()[0];
         new_shape = {k};
         for(std::size_t i = 0; i < k; ++i){
             float result_i = 0;
             for(std::size_t j = 0; j < m; ++j){
-                result_i += (*this)(i,j) + other(j);
+                result_i += (*this)(i,j) * other(j);
             }
             result.push_back(result_i);
         }
@@ -360,5 +486,198 @@ Tensor Tensor::matmul(const Tensor& other) const {
         throw std::invalid_argument("matmul only supported for 1D or 2D tensors");
     }
 
-    return Tensor(result, new_shape, false);
+    auto this_node = m_node;
+    auto other_node = other.m_node;
+    const bool req_grad = this_node->m_requires_grad || other_node->m_requires_grad;
+
+    Tensor out(result, new_shape, req_grad);
+    
+    // gradient logic
+    if(req_grad) {
+        auto out_node = out.m_node;
+    
+        out_node->m_parents = {this_node, other_node};
+    
+        out_node->m_gradfn = 
+            [this_node, other_node, out_node, this_dims, other_dims]() {
+                // 1D x 1D = Scalar
+                if(this_dims == 1 && other_dims == 1){
+                    const float g = out_node->m_grad[0];
+                    const std::size_t n = this_node->m_shape[0];
+                    
+                    for(auto i = 0; i < n; ++i) {
+                        if(this_node->m_requires_grad){
+                            this_node->m_grad[i] += g*other_node->m_data[i];
+                        }
+
+                        if(other_node->m_requires_grad){
+                            other_node->m_grad[i] += g*this_node->m_data[i];
+                        }
+                    }
+                }
+
+                // 1D x 2D = 1D -> m x (m,k) = k
+                if(this_dims == 1 && other_dims == 2){
+                    auto m = this_node->m_shape[0];
+                    auto k = other_node->m_shape[1];
+                    
+                    for(auto j = 0; j < k; ++j){
+                        const float g = out_node->m_grad[j];
+                        
+                        for(auto i = 0; i < m; ++i){
+                            if(this_node->m_requires_grad){
+                                this_node->m_grad[i] += g*other_node->m_data[i * k + j];
+                            }
+
+                            if(other_node->m_requires_grad){
+                                other_node->m_grad[i * k + j] += g*this_node->m_data[i];
+                            }
+                        }
+                    }
+                }
+
+                // 2D x 1D = 1D -> (k,m) x m = k
+                if(this_dims == 2 && other_dims == 1) {
+                    auto m = this_node->m_shape[1];
+                    auto k = this_node->m_shape[0];
+
+                    for(auto j = 0; j < k; ++j){
+                        const float g = out_node->m_grad[j];
+                        
+                        for(auto i = 0; i < m; ++i) {
+                            if(this_node->m_requires_grad){
+                                this_node->m_grad[j * m + i] += g*other_node->m_data[i];
+                            }
+
+                            if(other_node->m_requires_grad){
+                                other_node->m_grad[i] += g*this_node->m_data[j * m + i];
+                            }
+                        }
+                    }
+                }
+
+                // 2D x 2D = 2D -> (k,m) x (m,l) = (k,l)
+                if(this_dims == 2 && other_dims == 2) {
+                    auto k = this_node->m_shape[0];
+                    auto m = this_node->m_shape[1];
+                    auto l = other_node->m_shape[1];
+
+                    for(auto j = 0; j < k; ++j){
+                        for(auto i = 0; i < l; ++i) {
+                            const float g = out_node->m_grad[j * l + i];
+
+                            for(auto t = 0; t < m; ++t) {
+                                if(this_node->m_requires_grad){
+                                    this_node->m_grad[j * m + t] += g*other_node->m_data[t * l + i];
+                                }
+
+                                if(other_node->m_requires_grad){
+                                    other_node->m_grad[t * l + i] += g*this_node->m_data[j * m + t];
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+    }
+
+    return out;
+}
+
+Tensor Tensor::sum() const {
+    auto parent = m_node;
+
+    float acc = std::accumulate(parent->m_data.begin(), parent->m_data.end(), 0.0f);
+
+    Tensor out(acc, parent->m_requires_grad);
+    if(parent->m_requires_grad) {
+        auto out_node = out.m_node;
+        out_node->m_parents = {parent};
+
+        out_node->m_gradfn = [parent, out_node]() {
+            const float g = out_node->m_grad[0];
+
+            for(auto& comp : parent->m_grad) {
+                comp += g;
+            }
+        };
+    }
+
+    return out;
+
+}
+
+
+void Tensor::add_to_grad(const std::vector<float>& grad_update) {
+
+    if(m_node->m_requires_grad){
+        if(grad_update.size() == m_node->m_grad.size()) {
+            for(auto i = 0; i < grad_update.size(); ++i){
+                m_node->m_grad[i] += grad_update[i];
+            }
+        }
+        else{
+            throw std::runtime_error("Gradient shape mismatch during addition");
+        }
+    }
+}
+
+void Tensor::zero_grad() { 
+    m_node->m_grad = std::vector<float>(size(), 0.0f);
+}
+
+void Tensor::build_topo(const std::shared_ptr<Tensor::Node>& node, std::unordered_set<Tensor::Node*>& visited, std::vector<std::shared_ptr<Tensor::Node>>& topo) {
+    // if node was already visited, exit loop
+    if(visited.find(node.get()) != visited.end()) {
+        return;
+    }
+    
+    // if not, record it as visited
+    visited.insert(node.get());
+    
+
+    for (const auto& parent : node->m_parents) {
+        build_topo(parent, visited, topo);
+    }
+
+    topo.push_back(node);
+}
+
+
+// backward propagation for scalar outputs 
+void Tensor::backward() {
+    if(size() != 1) {
+        throw std::runtime_error("backward() with no arguments only works for scalar outputs."
+                                 "For vector/matrix outputs, pass a seed gradient");
+                                 
+    }
+
+    backward(std::vector<float>{1.0f});
+}
+
+// overload for higher dimensional outputs
+void Tensor::backward(const std::vector<float>& seed_grad) {
+    if (seed_grad.size() != size()) {
+        throw std::runtime_error("Seed size must match tensor size");
+    }
+
+    std::vector<std::shared_ptr<Node>> topo;
+    std::unordered_set<Node*> visited;
+
+    build_topo(m_node, visited, topo);
+
+    // clear all gradients
+    for (auto& node : topo) {
+        std::fill(node->m_grad.begin(), node->m_grad.end(), 0.0f);
+    }
+
+    // Seed dOutput/dOutput
+    m_node->m_grad = seed_grad;
+
+    // Traverse graph backwards
+    for(auto it = topo.rbegin(); it != topo.rend(); ++it) {
+        if((*it)->m_gradfn){
+            (*it)->m_gradfn();
+        }
+    }
 }
