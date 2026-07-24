@@ -19,7 +19,7 @@ void Module::register_module(std::string name, std::shared_ptr<Module> mod) {
     m_parameters.push_back({name, mod});
 }
 
-dict<Node> Module::parameters() const {
+list<Node> Module::parameters() const {
     dict<Node> params;
     for(const auto& p : m_parameters){
         params.push_back(p);
@@ -31,5 +31,30 @@ dict<Node> Module::parameters() const {
         }
     }
     return params;
+}
+
+dict<Node> Module::state_dict() const {
+    map<Node> state_dict;
+    for(const auto& p : parameters()){
+        state_dict[p.first] = p.second;
+    }
+    return state_dict;
+}
+
+void Module::load_state_dict(dict<Node>& state_dict){
+    for(const auto& p : parameters()){
+        auto it = state_dict.find(p.first);
+        if (it == state_dict.end())
+        {
+            std::cerr << "W: Param " << p.first << " not found in state dict \n";
+            continue;
+        }
+        Tensor stored_param(it->second);
+        Tensor p_second(p.second);
+        if(p_second.shape() != stored_param.shape()){
+            throw std::runtime_error("Param " + p.first + " has different shape in state_dict");
+        }
+        p_second.set_data(stored_param.data());
+    }
 
 }

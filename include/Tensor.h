@@ -80,6 +80,10 @@ public:
         const std::vector<float> &data() const{ return m_node->m_data; }
         const bool requires_grad() const { return m_node->m_requires_grad; }
         const std::vector<float>& grad() const { return m_node->m_grad; }
+        std::shared_ptr<Node> node() const { return m_node; }
+        
+        // setters
+        void set_data(std::vector<float> data) { m_node->m_data = data; }
 
         // operations
         Tensor operator+(const Tensor& other) const;

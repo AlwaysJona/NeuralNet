@@ -10,14 +10,18 @@
 
 template <typename T>
 // basically a python dictionary
-using dict = std::vector<std::pair<std::string, std::shared_ptr<T>>>;
+using list = std::vector<std::pair<std::string, std::shared_ptr<T>>>;
+
+template <typename T>
+// actually a dictinary
+using dict = std::unordered_map<std::string, std::shared_ptr<T>>;
 
 class Module
 {
 
 private:
-    dict<Node> m_parameters;
-    dict<Module> m_modules;
+    list<Node> m_parameters;
+    list<Module> m_modules;
 
 public: 
     virtual ~Module() = default;
@@ -28,8 +32,9 @@ public:
     void register_parameter(std::string name, std::shared_ptr<Node> param);
     void register_module(std::string name, std::shared_ptr<Module> mod);
     
-    dict<Node> parameters() const;
-
+    list<Node> parameters() const;
+    dict<Node> stade_dict() const;
+    void load_state_dict(dict<Node>& state_dict);
     
 };
 
