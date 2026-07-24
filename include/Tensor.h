@@ -54,7 +54,9 @@ public:
                 std::function<void()> gradfn = nullptr,
                 std::vector<std::shared_ptr<Node>> parents = {}); // 2D tensor
         
-        // flat Tensor with specified shape                                                     
+        explicit Tensor(std::shared_ptr<Node> node) : m_node(std::move(node)) {}
+        
+        // flat Tensor with specified shape
         Tensor(const std::vector<float> &data, 
                 const std::vector<std::size_t> &shape,
                 bool requires_grad = false,
@@ -82,6 +84,7 @@ public:
         // operations
         Tensor operator+(const Tensor& other) const;
         Tensor operator*(const Tensor& other) const; // element wise multiplication
+        Tensor operator-(const Tensor& other) const;
         Tensor matmul(const Tensor& other) const; // matrix multiplication
         Tensor sum() const; // accumulates all the values of a higher dimensional tensor, returns a Scalar tensor
 

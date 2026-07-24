@@ -417,7 +417,10 @@ Tensor Tensor::operator*(const Tensor& other) const {
     return out;
 }
 
-// TODO: add gradient logic
+Tensor Tensor::operator-(const Tensor& other) const {
+    return (*this) + Tensor(-1) * other;
+}
+
 Tensor Tensor::matmul(const Tensor& other) const {
     auto this_dims = m_node->m_shape.size();
     auto other_dims = other.shape().size();
