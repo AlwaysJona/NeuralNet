@@ -1,7 +1,7 @@
 #ifndef MODULE_H
 #define MODULE_H
 
-#include "NeuralNet/include/Tensor.h"
+#include "Tensor.h"
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -9,11 +9,11 @@
 #include <vector>
 
 template <typename T>
-// basically a python dictionary
+// basically a python list
 using list = std::vector<std::pair<std::string, std::shared_ptr<T>>>;
 
 template <typename T>
-// actually a dictinary
+// basically a python dictionary
 using dict = std::unordered_map<std::string, std::shared_ptr<T>>;
 
 class Module
@@ -24,8 +24,6 @@ private:
     list<Module> m_modules;
 
 public: 
-    virtual ~Module() = default;
-
     virtual std::shared_ptr<Node> forward(std::shared_ptr<Node> input) = 0;
     std::shared_ptr<Node> operator()(std::shared_ptr<Node> input) { return forward(input); }
     
@@ -33,7 +31,7 @@ public:
     void register_module(std::string name, std::shared_ptr<Module> mod);
     
     list<Node> parameters() const;
-    dict<Node> stade_dict() const;
+    dict<Node> state_dict() const;
     void load_state_dict(dict<Node>& state_dict);
     
 };
