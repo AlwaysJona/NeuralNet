@@ -83,6 +83,7 @@ public:
         std::shared_ptr<Node> node() const { return m_node; }
         
         // setters
+        // TODO: need to add some control on shape and size for set_data
         void set_data(std::vector<float> data) { m_node->m_data = data; }
 
         // operations
