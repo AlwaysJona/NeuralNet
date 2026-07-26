@@ -5,6 +5,8 @@
 #include <string>
 #include <unordered_map>
 
+using Node = Tensor::Node;
+
 void save(const std::unordered_map<std::string, std::shared_ptr<Node>>& state_dict,
           const std::string& filename);
 

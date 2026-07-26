@@ -4,13 +4,13 @@
 
 Linear::Linear(std::size_t in_feat, std::size_t out_feat, std::size_t seed) :
     m_in_feature(in_feat), m_out_feature(out_feat), 
-    m_weight(Tensor(std::vector<std::vector<float>>(in_feat, std::vector<float>(out_feat, 0.0f)) true)),
+    m_weight(Tensor(std::vector<std::vector<float>>(in_feat, std::vector<float>(out_feat, 0.0f)), true)),
     m_bias(Tensor(std::vector<float>(out_feat, 0.0f), true)),
     m_seed(seed) {
     
     // register parameters
-    register_parameter("weight", m_weight);
-    register_parameter("bias", m_bias);
+    register_parameter("weight", m_weight.node());
+    register_parameter("bias", m_bias.node());
 
     // Kaiming initialization
     reset_parameters();
@@ -31,8 +31,8 @@ void Linear::reset_parameters(){
 
 }
 
-std::shared_ptr<Node> forward(std::shared_ptr<Node> input){
+std::shared_ptr<Node> Linear::forward(std::shared_ptr<Node> input){
     Tensor t_input = Tensor(input);
-    Tensor result = t_input * m_weight + m_bias
+    Tensor result = t_input * m_weight + m_bias;
     return result.node();
 }

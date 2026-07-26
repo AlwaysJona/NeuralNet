@@ -16,6 +16,8 @@ template <typename T>
 // basically a python dictionary
 using dict = std::unordered_map<std::string, std::shared_ptr<T>>;
 
+using Node = Tensor::Node;
+
 class Module
 {
 

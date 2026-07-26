@@ -16,17 +16,17 @@ void Module::register_module(std::string name, std::shared_ptr<Module> mod) {
             throw std::runtime_error("Module " + name + " already registered");
         }
     }
-    m_parameters.push_back({name, mod});
+    m_modules.push_back({name, mod});
 }
 
 list<Node> Module::parameters() const {
-    dict<Node> params;
+    list<Node> params;
     for(const auto& p : m_parameters){
         params.push_back(p);
     }
     for(const auto& m : m_modules){
         for(const auto& p: m.second->parameters()){
-            std:.string full_name = m.first.empty() ? p.first : m.first + "." p.first;
+            std::string full_name = m.first.empty() ? p.first : m.first + "." + p.first;
             params.push_back({full_name, p.second});
         }
     }
@@ -34,7 +34,7 @@ list<Node> Module::parameters() const {
 }
 
 dict<Node> Module::state_dict() const {
-    map<Node> state_dict;
+    dict<Node> state_dict;
     for(const auto& p : parameters()){
         state_dict[p.first] = p.second;
     }

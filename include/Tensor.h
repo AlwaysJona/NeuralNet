@@ -12,7 +12,8 @@
 
 class Tensor
 {
-private:
+public:
+
         struct Node {
             std::vector<float> m_data;
             std::vector<std::size_t> m_shape; // empty if scalar, 1 element if 1D, 2 elements if 2D (rows and cols)
@@ -22,36 +23,28 @@ private:
             bool m_requires_grad;
 
             // updates gradient of parent based on gradient of child
-            std::function<void()> m_gradfn; 
+            std::function<void(const std::vector<float> &)> m_gradfn; 
 
             std::vector<std::shared_ptr<Node>> m_parents;
             
             // constructor
             Node(std::vector<float> data, std::vector<std::size_t> shape, bool requires_grad);
         };
-        
-        std::shared_ptr<Node> m_node;
-
-        // topological sort helper for faster navigation
-        static void build_topo(const std::shared_ptr<Tensor::Node>& Node,
-                                std::unordered_set<Tensor::Node*>& visited,
-                                std::vector<std::shared_ptr<Tensor::Node>>& topo); 
 
 
-public:
         // constructors
         explicit Tensor(const float data, bool requires_grad = false,
-                std::function<void()> gradfn = nullptr,
+                std::function<void(const std::vector<float> &)> gradfn = nullptr,
                 std::vector<std::shared_ptr<Node>> parents = {}); // scalar
         
         explicit Tensor(const std::vector<float> &data, 
                 bool requires_grad = false,
-                std::function<void()> gradfn = nullptr,
+                std::function<void(const std::vector<float> &)> gradfn = nullptr,
                 std::vector<std::shared_ptr<Node>> parents = {}); // 1D tensor
                                               
         explicit Tensor(const std::vector<std::vector<float>> &data, 
                 bool requires_grad = false,
-                std::function<void()> gradfn = nullptr,
+                std::function<void(const std::vector<float> &)> gradfn = nullptr,
                 std::vector<std::shared_ptr<Node>> parents = {}); // 2D tensor
         
         explicit Tensor(std::shared_ptr<Node> node) : m_node(std::move(node)) {}
@@ -60,9 +53,12 @@ public:
         Tensor(const std::vector<float> &data, 
                 const std::vector<std::size_t> &shape,
                 bool requires_grad = false,
-                std::function<void()> gradfn = nullptr,
-                std::vector<std::shared_ptr<Node>> parents = {}); 
-        
+                std::function<void(const std::vector<float> &)> gradfn = nullptr,
+                std::vector<std::shared_ptr<Node>> parents = {});
+
+        // default constructor
+        Tensor() { Tensor(0.0f); }
+
         // returns the only item for scalars
         const float &item() const; // read only
         float &item(); // write
@@ -99,6 +95,16 @@ public:
         void backward();
         void backward(const std::vector<float>& seed_grad);
         friend std::ostream &operator<<(std::ostream &os, const Tensor &obj);
+private:
+        std::shared_ptr<Node> m_node;
+
+        // topological sort helper for faster navigation
+        static void build_topo(const std::shared_ptr<Tensor::Node>& Node,
+                                std::unordered_set<Tensor::Node*>& visited,
+                                std::vector<std::shared_ptr<Tensor::Node>>& topo); 
+
+
+
 };
 
 #endif

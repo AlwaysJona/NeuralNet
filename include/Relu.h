@@ -6,7 +6,7 @@
 
 class Relu : public Module {
 
-public
+public:
     std::shared_ptr<Node> forward(std::shared_ptr<Node> input) override;
 
 };

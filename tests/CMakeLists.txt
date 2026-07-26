@@ -7,7 +7,7 @@ add_executable(tests tests.cpp)
 # - doctest::doctest: the testing framework itself
 # PRIVATE means these dependencies are only needed to build and run tests,
 # they won't be exposed to anything else.
-target_link_libraries(tests PRIVATE Tensor doctest::doctest)
+target_link_libraries(tests PRIVATE NeuralNetworkLib doctest::doctest)
 
 # Loads a helper script that comes bundled with doctest.
 # This script provides the doctest_discover_tests() function used below.

@@ -26,11 +26,11 @@ Tensor::Node::Node(std::vector<float> data,
     m_stride(compute_stride(m_shape)),
     m_grad(m_data.size(), 0.0f), 
     m_requires_grad(requires_grad),
-    m_gradfn([](){}),
+    m_gradfn([](const std::vector<float> &grad_output){}),
     m_parents{} {}
 
 Tensor::Tensor(const float data, bool requires_grad,
-        std::function<void()> gradfn,
+        std::function<void(const std::vector<float>&)> gradfn,
         std::vector<std::shared_ptr<Node>> parents)
                                         : m_node(std::make_shared<Node>(
                                         std::vector<float>{data},
@@ -47,7 +47,7 @@ Tensor::Tensor(const float data, bool requires_grad,
 }
 
 Tensor::Tensor(const std::vector<float> &data, bool requires_grad,
-        std::function<void()> gradfn,
+        std::function<void(const std::vector<float>&)> gradfn,
         std::vector<std::shared_ptr<Node>> parents) {
     if(data.empty()){
         throw std::invalid_argument("Cannot create Tensor from empty vector");
@@ -69,7 +69,7 @@ Tensor::Tensor(const std::vector<float> &data, bool requires_grad,
 }
 
 Tensor::Tensor(const std::vector<std::vector<float>> &data, bool requires_grad,
-        std::function<void()> gradfn,
+        std::function<void(const std::vector<float>&)> gradfn,
         std::vector<std::shared_ptr<Node>> parents) {
     if(data.empty()){
         throw std::invalid_argument("Can't create 2D Tensor from empty vector");
@@ -105,7 +105,7 @@ Tensor::Tensor(const std::vector<std::vector<float>> &data, bool requires_grad,
 }
 
 Tensor::Tensor(const std::vector<float> &data, const std::vector<std::size_t> &shape, bool requires_grad,
-        std::function<void()> gradfn,
+        std::function<void(const std::vector<float>&)> gradfn,
         std::vector<std::shared_ptr<Node>> parents) {
     if(shape.size() > 2) {
         throw std::invalid_argument("Only scalar, 1D and 2D tensors are currently supported");
@@ -297,9 +297,9 @@ Tensor Tensor::operator+(const Tensor& other) const {
 
         out_node->m_parents = {this_node, other_node};
         out_node->m_gradfn =
-            [this_node, other_node, out_node, this_scalar, other_scalar]() {
+            [this_node, other_node, out_node, this_scalar, other_scalar](const std::vector<float>& grad_output) {
                 for(std::size_t i = 0; i < out_node->m_data.size(); ++i) {
-                    const float g = out_node->m_grad[i];
+                    const float g = grad_output[i];
                     
                     // c = a + b
                     // dc/da = 1    and    dc/db = 1
@@ -378,9 +378,9 @@ Tensor Tensor::operator*(const Tensor& other) const {
         out_node->m_parents = {this_node, other_node};
 
         out_node->m_gradfn = 
-            [this_node, other_node, out_node, this_scalar, other_scalar]() {
+            [this_node, other_node, out_node, this_scalar, other_scalar](const std::vector<float>& grad_output) {
                 for(std::size_t i = 0; i < out_node->m_data.size(); ++i) {
-                    const float g = out_node->m_grad[i];
+                    const float g = grad_output[i];
                 
                     // c = a * b
                     // dc/da = b    and    dc/db = a
@@ -501,11 +501,11 @@ Tensor Tensor::matmul(const Tensor& other) const {
     
         out_node->m_parents = {this_node, other_node};
     
-        out_node->m_gradfn = 
-            [this_node, other_node, out_node, this_dims, other_dims]() {
+        std::function<void(const std::vector<float> &)> gradfn = 
+            [this_node, other_node, this_dims, other_dims](const std::vector<float>& grad_output) {
                 // 1D x 1D = Scalar
                 if(this_dims == 1 && other_dims == 1){
-                    const float g = out_node->m_grad[0];
+                    const float g = grad_output[0];
                     const std::size_t n = this_node->m_shape[0];
                     
                     for(auto i = 0; i < n; ++i) {
@@ -525,7 +525,7 @@ Tensor Tensor::matmul(const Tensor& other) const {
                     auto k = other_node->m_shape[1];
                     
                     for(auto j = 0; j < k; ++j){
-                        const float g = out_node->m_grad[j];
+                        const float g = grad_output[j];
                         
                         for(auto i = 0; i < m; ++i){
                             if(this_node->m_requires_grad){
@@ -545,7 +545,7 @@ Tensor Tensor::matmul(const Tensor& other) const {
                     auto k = this_node->m_shape[0];
 
                     for(auto j = 0; j < k; ++j){
-                        const float g = out_node->m_grad[j];
+                        const float g = grad_output[j];
                         
                         for(auto i = 0; i < m; ++i) {
                             if(this_node->m_requires_grad){
@@ -567,7 +567,7 @@ Tensor Tensor::matmul(const Tensor& other) const {
 
                     for(auto j = 0; j < k; ++j){
                         for(auto i = 0; i < l; ++i) {
-                            const float g = out_node->m_grad[j * l + i];
+                            const float g = grad_output[j * l + i];
 
                             for(auto t = 0; t < m; ++t) {
                                 if(this_node->m_requires_grad){
@@ -582,6 +582,7 @@ Tensor Tensor::matmul(const Tensor& other) const {
                     }
                 }
             };
+            out_node->m_gradfn = gradfn;
     }
 
     return out;
@@ -597,8 +598,8 @@ Tensor Tensor::sum() const {
         auto out_node = out.m_node;
         out_node->m_parents = {parent};
 
-        out_node->m_gradfn = [parent, out_node]() {
-            const float g = out_node->m_grad[0];
+        out_node->m_gradfn = [parent, out_node](const std::vector<float>& grad_output) {
+            const float g = grad_output[0];
 
             for(auto& comp : parent->m_grad) {
                 comp += g;
@@ -680,7 +681,7 @@ void Tensor::backward(const std::vector<float>& seed_grad) {
     // Traverse graph backwards
     for(auto it = topo.rbegin(); it != topo.rend(); ++it) {
         if((*it)->m_gradfn){
-            (*it)->m_gradfn();
+            (*it)->m_gradfn((*it)->m_grad);
         }
     }
 }

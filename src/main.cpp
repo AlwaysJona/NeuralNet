@@ -1,54 +1,67 @@
 #include <iostream>
 #include "Tensor.h"
+#include "Module.h"
+#include "Flatten.h"
+#include "Linear.h"
+#include "Relu.h"
+#include "Serialization.h"
 
-float compute_loss(std::vector<float> a,
-                   std::vector<float> b,
-                   std::vector<std::size_t> shape) {
+#include <numeric>
+#include <random>
+#include <vector>
+
+
+class NeuralNetwork : public Module {
+private: 
+    // layers
+    std::shared_ptr<Flatten> m_flatten = std::make_shared<Flatten>();
+    std::shared_ptr<Linear> m_lin1 = std::make_shared<Linear>(28*28, 512);
+    std::shared_ptr<Linear> m_lin2 = std::make_shared<Linear>(512, 512);
+    std::shared_ptr<Linear> m_lin3 = std::make_shared<Linear>(512, 10);
+    // activation
+    std::shared_ptr<Relu> m_relu = std::make_shared<Relu>();
+
+public:
+    NeuralNetwork(){
+        register_module("linear_1", m_lin1);
+        register_module("linear_2", m_lin2);
+        register_module("linear_3", m_lin3);
+    }
+    std::shared_ptr<Node> forward(std::shared_ptr<Node> input){
+        Tensor t_input(std::move(input));
+        std::shared_ptr<Node> flat = (*m_flatten)(t_input.node());
+        std::shared_ptr<Node> linear_1 = (*m_lin1)(flat);
+        std::shared_ptr<Node> relu_1 = (*m_relu)(linear_1);
+        std::shared_ptr<Node> linear_2 = (*m_lin2)(relu_1);
+        std::shared_ptr<Node> relu_2 = (*m_relu)(linear_2);
+        std::shared_ptr<Node> linear_3 = (*m_lin3)(relu_2);
+        return linear_3;
+    }
     
-    Tensor A(a, shape, false);
-    Tensor B(b, shape, false);
-    
-    return (A.matmul(B) * B.matmul(A)).sum().item();
-}
+};
 
 int main(){
-        std::vector<float> v1{1.0f, 2.0f, 3.0f, 4.0f};
-        std::vector<float> v2{5.0f, 6.0f, 7.0f, 8.0f};
+    NeuralNetwork model;
+    
+    // random input
+    std::vector<std::vector<float>> input_data(28, std::vector<float>(28));
+    std::mt19937 rng(std::random_device{}());
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+    for(auto& row : input_data) {
+        for(auto& val : row){
+            val = dist(rng);
+        }
+    }
+    // create input tensor
+    Tensor input_t(input_data);
 
-        std::vector<std::size_t> shape{2,2};
+    // forward pass 
+    std::shared_ptr<Node> output = model(input_t.node());
 
-        Tensor A(v1, shape, true);
-        Tensor B(v2, shape, true);
+    Tensor output_t(output);
 
-        const float delta = 1e-5f;
-        const std::size_t i = 0;
+    std::cout << "Output tensor: " << output_t << std::endl;
 
-        std::vector<float> a_plus = v1;
-        std::vector<float> a_minus = v1;
-
-        a_plus[i] += delta;
-        a_minus[i] -= delta;
-
-        const float loss_plus = compute_loss(a_plus, v2, shape);
-        const float loss_minus = compute_loss(a_minus, v2, shape);
-
-        Tensor loss = (A.matmul(B) * B.matmul(A)).sum();
-        loss.backward();
-
-        // dLoss/dA[i]
-        const float analytical_grad = A.grad()[i];
-        const float numerical_grad = (loss_plus - loss_minus) / (2*delta);
-
-        const float abs_diff = std::abs(analytical_grad - numerical_grad);
-        const float rel_ana = abs_diff / analytical_grad;
-        const float rel_num = abs_diff / numerical_grad;
-
-        std::cout << "Delta: " << delta << "\n";
-        std::cout << "Analytical grad: " << analytical_grad << "\n";
-        std::cout << "Numerical grad: " << numerical_grad << "\n";
-        std::cout << "Absolute diff: " << abs_diff << "\n";
-        std::cout << "Diff relative to Analytical: " << rel_ana << "\n"; 
-        std::cout << "Diff relative to Numerical: " << rel_num << "\n"; 
-
+    return 0;
 }
 

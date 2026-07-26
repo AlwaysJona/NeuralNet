@@ -21,7 +21,7 @@ void save(const std::unordered_map<std::string, std::shared_ptr<Node>>& state_di
         file.write(weight_name.data(), name_len);
     
         Tensor t_weight(weight);
-        std::size_t shape_len = t_weight->shape().size();
+        std::size_t shape_len = t_weight.shape().size();
         file.write(reinterpret_cast<const char *>(&shape_len), sizeof(std::size_t));
         file.write(reinterpret_cast<const char *>(t_weight.shape().data()),
                                                   shape_len * sizeof(size_t));

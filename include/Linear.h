@@ -14,7 +14,7 @@ private:
     std::size_t m_seed;
 
 public:
-    Linear(std::size_t in_feat, std::size_t out_feat, std::size_t seed);
+    Linear(std::size_t in_feat, std::size_t out_feat, std::size_t seed = 7);
     std::shared_ptr<Node> forward(std::shared_ptr<Node> input) override;
 
     void reset_parameters();
