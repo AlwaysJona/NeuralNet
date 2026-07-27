@@ -77,7 +77,7 @@ class Tensor {
   const std::vector<std::size_t> &shape() const { return m_node->m_shape; }
   const std::size_t &stride() const { return m_node->m_stride; }
   const std::vector<float> &data() const { return m_node->m_data; }
-  std::vector<float> &data() const { return m_node->m_data; }
+  std::vector<float> &data() { return m_node->m_data; }
   const bool requires_grad() const { return m_node->m_requires_grad; }
   const std::vector<float> &grad() const { return m_node->m_grad; }
   std::shared_ptr<Node> node() const { return m_node; }
