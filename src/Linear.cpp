@@ -33,6 +33,6 @@ void Linear::reset_parameters(){
 
 std::shared_ptr<Node> Linear::forward(std::shared_ptr<Node> input){
     Tensor t_input = Tensor(input);
-    Tensor result = t_input * m_weight + m_bias;
+    Tensor result = t_input.matmul(m_weight) + m_bias;
     return result.node();
 }

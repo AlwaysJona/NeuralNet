@@ -26,15 +26,24 @@ public:
         register_module("linear_1", m_lin1);
         register_module("linear_2", m_lin2);
         register_module("linear_3", m_lin3);
+        std::cout << "Constructor of NeuralNetwork called \n";
     }
     std::shared_ptr<Node> forward(std::shared_ptr<Node> input){
+        std::cout << "Entered forward() function \n";
         Tensor t_input(std::move(input));
+        std::cout << "Before flat \n";
         std::shared_ptr<Node> flat = (*m_flatten)(t_input.node());
+        std::cout << "Before linear 1 \n";
         std::shared_ptr<Node> linear_1 = (*m_lin1)(flat);
+        std::cout << "Before relu 1 \n";
         std::shared_ptr<Node> relu_1 = (*m_relu)(linear_1);
+        std::cout << "Before linear 2 \n";
         std::shared_ptr<Node> linear_2 = (*m_lin2)(relu_1);
+        std::cout << "Before relu 2 \n";
         std::shared_ptr<Node> relu_2 = (*m_relu)(linear_2);
+        std::cout << "Before linear 3 \n";
         std::shared_ptr<Node> linear_3 = (*m_lin3)(relu_2);
+        std::cout << "After linear 3 \n";
         return linear_3;
     }
     
@@ -55,8 +64,12 @@ int main(){
     // create input tensor
     Tensor input_t(input_data);
 
+    std::cout << "Tensor created \n";
+
     // forward pass 
     std::shared_ptr<Node> output = model(input_t.node());
+
+    std::cout << "Forward pass called, output created \n";
 
     Tensor output_t(output);
 
