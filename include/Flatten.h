@@ -9,8 +9,8 @@
 // The Flatten module is used to linearize the input, in whatever format it is
 // given
 class Flatten : public Module {
-   public:
-    std::shared_ptr<Node> forward(std::shared_ptr<Node> input) override;
+ public:
+  std::shared_ptr<Node> forward(std::shared_ptr<Node> input) override;
 };
 
 #endif
