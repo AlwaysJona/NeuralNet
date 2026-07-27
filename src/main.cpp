@@ -1,34 +1,33 @@
 #include <iostream>
-#include "Tensor.h"
-#include "Module.h"
-#include "Flatten.h"
-#include "Linear.h"
-#include "Relu.h"
-#include "Serialization.h"
-
 #include <numeric>
 #include <random>
 #include <vector>
 
+#include "Flatten.h"
+#include "Linear.h"
+#include "Module.h"
+#include "Relu.h"
+#include "Serialization.h"
+#include "Tensor.h"
 
 class NeuralNetwork : public Module {
-private: 
+   private:
     // layers
     std::shared_ptr<Flatten> m_flatten = std::make_shared<Flatten>();
-    std::shared_ptr<Linear> m_lin1 = std::make_shared<Linear>(28*28, 512);
+    std::shared_ptr<Linear> m_lin1 = std::make_shared<Linear>(28 * 28, 512);
     std::shared_ptr<Linear> m_lin2 = std::make_shared<Linear>(512, 512);
     std::shared_ptr<Linear> m_lin3 = std::make_shared<Linear>(512, 10);
     // activation
     std::shared_ptr<Relu> m_relu = std::make_shared<Relu>();
 
-public:
-    NeuralNetwork(){
+   public:
+    NeuralNetwork() {
         register_module("linear_1", m_lin1);
         register_module("linear_2", m_lin2);
         register_module("linear_3", m_lin3);
         std::cout << "Constructor of NeuralNetwork called \n";
     }
-    std::shared_ptr<Node> forward(std::shared_ptr<Node> input){
+    std::shared_ptr<Node> forward(std::shared_ptr<Node> input) {
         std::cout << "Entered forward() function \n";
         Tensor t_input(std::move(input));
         std::cout << "Before flat \n";
@@ -46,18 +45,17 @@ public:
         std::cout << "After linear 3 \n";
         return linear_3;
     }
-    
 };
 
-int main(){
+int main() {
     NeuralNetwork model;
-    
+
     // random input
     std::vector<std::vector<float>> input_data(28, std::vector<float>(28));
     std::mt19937 rng(std::random_device{}());
     std::uniform_real_distribution<float> dist(0.0f, 1.0f);
-    for(auto& row : input_data) {
-        for(auto& val : row){
+    for (auto& row : input_data) {
+        for (auto& val : row) {
             val = dist(rng);
         }
     }
@@ -66,7 +64,7 @@ int main(){
 
     std::cout << "Tensor created \n";
 
-    // forward pass 
+    // forward pass
     std::shared_ptr<Node> output = model(input_t.node());
 
     std::cout << "Forward pass called, output created \n";
@@ -77,4 +75,3 @@ int main(){
 
     return 0;
 }
-
