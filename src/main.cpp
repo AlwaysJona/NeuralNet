@@ -3,11 +3,16 @@
 #include <random>
 #include <vector>
 
+#include "Dataloader.h"
+#include "Dataset.h"
 #include "Flatten.h"
 #include "Linear.h"
+#include "Loss.h"
 #include "Module.h"
 #include "Relu.h"
+#include "SGD.h"
 #include "Serialization.h"
+#include "Softmax.h"
 #include "Tensor.h"
 
 class NeuralNetwork : public Module {
@@ -47,7 +52,7 @@ class NeuralNetwork : public Module {
   }
 };
 
-int main() {
+void test_neural_net() {
   NeuralNetwork model;
 
   // random input
@@ -72,6 +77,29 @@ int main() {
   Tensor output_t(output);
 
   std::cout << "Output tensor: " << output_t << std::endl;
+}
 
+void dataset_loading_test() {
+  std::cout << "Before loading data \n";
+  MNIST mnist_train =
+      MNIST("data/train-images.idx3-ubyte", "data/train-labels.idx1-ubyte");
+
+  std::cout << "Dataset loaded \n";
+  int batch_size = 10;
+  Dataloader mnist_train_loader(&mnist_train, batch_size);
+
+  std::cout << "Visualizing first batch of training data \n" << std::endl;
+
+  for (auto batch : mnist_train_loader) {
+    for (auto item : batch) {
+      visualize_image(item.second);
+      std::cout << mnist_train.label_to_class(item.first) << std::endl;
+    }
+    break;
+  }
+}
+
+int main() {
+  dataset_loading_test();
   return 0;
 }

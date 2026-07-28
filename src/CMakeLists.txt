@@ -7,6 +7,11 @@ add_library(NeuralNetworkLib
     Relu.cpp
     Flatten.cpp
     Serialization.cpp
+    Dataloader.cpp
+    Dataset.cpp
+    Loss.cpp
+    SGD.cpp
+    Softmax.cpp
 )
 
 # Tells CMake where to find the header files (.h) for the Tensor library.

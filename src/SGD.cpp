@@ -1,8 +1,9 @@
+#include "SGD.h"
+
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "SGD.h"
 #include "Tensor.h"
 
 SGD::SGD(list<Node> par, const float& lr)

@@ -1,10 +1,13 @@
 #include "Loss.h"
+
+#include <cmath>
+
 #include "Module.h"
 #include "Softmax.h"
 #include "Tensor.h"
 
 std::shared_ptr<Node> Loss::forward(std::shared_ptr<Node> input) {
-    throw std::runtime_error("Loss expects both an input and a target \n";
+  throw std::runtime_error("Loss expects both an input and a target \n");
 }
 
 std::shared_ptr<Node> Loss::forward(std::shared_ptr<Node> input,
@@ -33,22 +36,22 @@ std::shared_ptr<Node> NLL_Loss::forward(std::shared_ptr<Node> input,
   if (input_t.requires_grad()) {
     std::vector<std::shared_ptr<Node>> parents{input};
     std::function<void(const std::vector<float>&)> gradfn =
-        [input_t, target](const std::vector<float>& grad_output) {
+        [input_t, target](const std::vector<float>& grad_output) mutable {
           std::vector<float> grad_input;
           for (std::size_t i = 0; i < input_t.size(); ++i) {
             if (i == target) {
               grad_input.push_back(grad_output[0] * (-1.0f / input_t(i)));
             } else {
-              grad_inout.push_back(0.0f);
+              grad_input.push_back(0.0f);
             }
           }
           input_t.add_to_grad(grad_input);
         };
     Tensor output_t(loss, true, gradfn, parents);
-    return loss.node();
+    return output_t.node();
   }
   Tensor output(loss);
-  return loss.node();
+  return output.node();
 }
 
 std::shared_ptr<Node> Cross_Entropy_Loss::forward(std::shared_ptr<Node> input,

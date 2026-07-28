@@ -1,8 +1,9 @@
+#include "Softmax.h"
+
 #include <algorithm>
 #include <memory>
 #include <random>
 
-#include "Softmax.h"
 #include "Tensor.h"
 
 std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
@@ -13,7 +14,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     if (input_t.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents{input};
       std::function<void(const std::vector<float>&)> gradfn =
-          [input_t](const std::vector<float>& grad_output) {
+          [input_t](const std::vector<float>& grad_output) mutable {
             // for scalar the grad of softmax is 0
             std::vector<float> grad_input{0.0f};
             input_t.add_to_grad(grad_input);
@@ -40,7 +41,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     if (input_t.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents{input};
       std::function<void(const std::vector<float>&)> gradfn =
-          [input_t, s](const std::vector<float>& grad_output) {
+          [input_t, s](const std::vector<float>& grad_output) mutable {
             std::vector<float> grad_input;
             for (std::size_t j = 0; j < input_t.size(); ++j) {
               float grad_j = 0;

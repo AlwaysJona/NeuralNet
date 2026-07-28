@@ -36,3 +36,6 @@ add_subdirectory(src)
 # Tells CMake to go into the tests/ directory and process the CMakeLists.txt
 # there.
 add_subdirectory(tests)
+
+file(COPY ${PROJECT_SOURCE_DIR}/data
+     DESTINATION ${PROJECT_BINARY_DIR})
