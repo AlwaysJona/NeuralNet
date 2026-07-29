@@ -60,9 +60,9 @@ void dataset_loading_test(const bool impose_limit,
 }
 
 int main() {
-  int size_limit = 1000;  // number of samples to train on and test on
-                          // the higher the number, the longer the program is
-                          // going to take, and the more accurate the model will be
+  int size_limit = 1000;  // Number of samples to train on and to test on.
+                          // The higher the number, the longer the program is
+                          // going to take, and the more accurate the model will be.
                           // WARNING: the full MNIST dataset contains 60k images,
                           // training on the full dataset can take from 30 minutes to
                           // 1 hour, while training on 1000 images takes about 1 minute
