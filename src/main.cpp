@@ -15,8 +15,9 @@
 #include "Serialization.h"
 #include "Softmax.h"
 #include "Tensor.h"
+#include "Neural.h"
 
-class NeuralNetwork : public Module {
+/*class NeuralNetwork : public Module {
  private:
   // layers
   std::shared_ptr<Flatten> m_flatten = std::make_shared<Flatten>();
@@ -42,7 +43,7 @@ class NeuralNetwork : public Module {
     std::shared_ptr<Node> linear_3 = (*m_lin3)(relu_2);
     return linear_3;
   }
-};
+};*/
 
 void neural_net_test() {
   NeuralNetwork model;
@@ -232,7 +233,7 @@ int main() {
   int size_limit = 1000;
   bool impose_limit = true;
   // dataset_loading_test(impose_limit, size_limit);
-  train_new_mnist_model(false);
-  inference_on_saved_model(false);
+  train_new_mnist_model(impose_limit, size_limit);
+  inference_on_saved_model(impose_limit, size_limit);
   return 0;
 }

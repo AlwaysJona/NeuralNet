@@ -12,6 +12,7 @@ add_library(NeuralNetworkLib
     Loss.cpp
     SGD.cpp
     Softmax.cpp
+    Neural.cpp
 )
 
 # Tells CMake where to find the header files (.h) for the Tensor library.
