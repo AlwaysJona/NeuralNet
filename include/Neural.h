@@ -40,5 +40,6 @@ void train_new_mnist_model(const bool impose_limit,
                            const int size_limit = 60000);
 
 void inference_on_saved_model(const bool impose_limit,
-                              const int size_limit = 60000);
+                              const int size_limit = 60000,
+                              const bool use_pre_trained = false);
 #endif

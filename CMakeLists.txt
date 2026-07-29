@@ -39,3 +39,6 @@ add_subdirectory(tests)
 
 file(COPY ${PROJECT_SOURCE_DIR}/data
      DESTINATION ${PROJECT_BINARY_DIR})
+
+file(COPY ${PROJECT_SOURCE_DIR}/models
+     DESTINATION ${PROJECT_BINARY_DIR})

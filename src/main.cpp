@@ -4,19 +4,9 @@
 #include <random>
 #include <vector>
 
-#include "Dataloader.h"
-#include "Dataset.h"
-#include "Flatten.h"
-#include "Linear.h"
-#include "Loss.h"
-#include "Module.h"
-#include "Relu.h"
-#include "SGD.h"
-#include "Serialization.h"
-#include "Softmax.h"
-#include "Tensor.h"
 #include "Neural.h"
 
+// Test function to verify proper creation and working of NeuralNetwork object
 void neural_net_test() {
   NeuralNetwork model;
 
@@ -44,6 +34,8 @@ void neural_net_test() {
   std::cout << "Output tensor: " << output_t << std::endl;
 }
 
+// Test function to verify proper creation and working of Dataset and Dataloader
+// objects
 void dataset_loading_test(const bool impose_limit,
                           const int& size_limit = 60000) {
   std::cout << "Before loading data \n";
@@ -68,10 +60,33 @@ void dataset_loading_test(const bool impose_limit,
 }
 
 int main() {
-  int size_limit = 1000;
-  bool impose_limit = true;
+  int size_limit = 1000;  // number of samples to train on and test on
+                          // the higher the number, the longer the program is
+                          // going to take, and the more accurate the model will be
+                          // WARNING: the full MNIST dataset contains 60k images,
+                          // training on the full dataset can take from 30 minutes to
+                          // 1 hour, while training on 1000 images takes about 1 minute
+                          // RECOMMENDATION: set size_limit > 10k only if 
+                          // you want to modify the model and the code
+
+  bool impose_limit = true;  // True if you'd like to apply the above size limit 
+                             // to the model
+                             
+  bool use_pre_trained = true; // True if you'd like to use the accurate pre-trained
+                               // model, trained on 60k images
+
   // dataset_loading_test(impose_limit, size_limit);
-  train_new_mnist_model(impose_limit, size_limit);
-  inference_on_saved_model(impose_limit, size_limit);
+  
+  train_new_mnist_model(impose_limit, size_limit); // Declared in Neural.h and 
+                                                   // defined in Neural.cpp.
+                                                   // Call it to train a new model.
+                                                   // Not needed if you want
+                                                   // to use the pre-trained model
+
+  inference_on_saved_model(impose_limit, size_limit, use_pre_trained); // use to test the model
+                                                                       // on the test set and
+                                                                       // visualize a few images, their
+                                                                       // label, and the model's
+                                                                       // guess
   return 0;
 }

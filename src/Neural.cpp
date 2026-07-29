@@ -118,10 +118,14 @@ void train_new_mnist_model(const bool impose_limit, const int size_limit) {
   std::cout << "Model saved \n";
 }
 
-void inference_on_saved_model(const bool impose_limit, const int size_limit) {
+void inference_on_saved_model(const bool impose_limit, const int size_limit,
+                              bool use_pre_trained) {
   NeuralNetwork model;
   std::cout << "Loading model...\n";
-  auto loaded_state_dict = load("models/mnist.nn");
+  std::string pre_trained_path("models/pre_trained_mnist.nn");
+  std::string new_model_path("models/mnist.nn");
+  auto loaded_state_dict =
+      use_pre_trained ? load(pre_trained_path) : load(new_model_path);
   model.load_state_dict(loaded_state_dict);
 
   std::cout << "Loading test set...\n";
@@ -139,6 +143,9 @@ void inference_on_saved_model(const bool impose_limit, const int size_limit) {
   std::vector<int> indices(all_indices.begin(),
                            all_indices.begin() + n_samples);
 
+  if (use_pre_trained) {
+    std::cout << "Using pre-trained model \n";
+  }
   for (int i = 0; i < n_samples; ++i) {
     std::cout << "Sample " << i << " of " << n_samples << std::endl;
     std::pair<int, std::shared_ptr<Node>> sample_image =
