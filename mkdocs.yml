@@ -1,0 +1,17 @@
+site_name: NeuralNet
+site_description: A C++ neural network framework
+site_author: Jonayed Ahmed
+
+theme:
+  name: material
+
+nav:
+  - Home: getting_started.md
+#  - Installation: installation.md
+#  - Usage: usage.md
+#  - Architecture: architecture.md
+#  - Examples: examples.md
+#  - API Reference: api.md
+
+repo_url: https://github.com/AlwaysJona/NeuralNet
+repo_name: GitHub
