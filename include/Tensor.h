@@ -85,6 +85,7 @@ class Tensor {
   // setters
   // TODO: need to add some control on shape and size for set_data
   void set_data(std::vector<float> data) { m_node->m_data = data; }
+  void set_node(std::shared_ptr<Node> node) { m_node = node; }
 
   // operations
   Tensor operator+(const Tensor &other) const;
@@ -94,8 +95,11 @@ class Tensor {
   Tensor sum() const;  // accumulates all the values of a higher dimensional
                        // tensor, returns a Scalar tensor
 
+  // utility methods
   void add_to_grad(const std::vector<float> &grad_update);
   void zero_grad();
+  std::size_t argmax() const;
+
   // bacward propagation
   void backward();
   void backward(const std::vector<float> &seed_grad);

@@ -12,7 +12,7 @@ SGD::SGD(list<Node> par, const float& lr)
 void SGD::step() {
   for (auto& par : m_params) {
     Tensor t(par.second);
-    for (std::size_t i = 0; t.size(); ++i) {
+    for (std::size_t i = 0; i < t.size(); ++i) {
       t.data()[i] -= m_learning_rate * t.grad()[i];
     }
   }

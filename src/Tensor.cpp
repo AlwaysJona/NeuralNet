@@ -683,3 +683,9 @@ void Tensor::backward(const std::vector<float>& seed_grad) {
     }
   }
 }
+
+// return index of the element with the highest value in the vector
+std::size_t Tensor::argmax() const {
+  return std::distance(data().begin(),
+                       std::max_element(data().begin(), data().end()));
+}

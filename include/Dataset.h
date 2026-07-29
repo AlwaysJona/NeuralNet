@@ -24,7 +24,8 @@ class MNIST : public Dataset {
                                       "five", "six", "seven", "eight", "nine"};
 
  public:
-  MNIST(std::string data_path, std::string labels_path);
+  MNIST(std::string data_path, std::string labels_path, const bool impose_limit,
+        const int& size_limit = 60000);
   std::pair<int, std::shared_ptr<Node>> get_item(int index) override;
   int get_length() override;
   std::string label_to_class(int label);
