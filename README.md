@@ -13,6 +13,9 @@ The project is written in modern C++. It makes use of object-oriented programmin
 ## Table of Contents
 
 - [Build and Run](#build-and-run)
+- [Features](#features)
+- [Project Architecture](#project-architecture)
+- [Execution Flow](#execution-flow)
 
 ## Build and Run
 ### Requirements
@@ -42,7 +45,7 @@ cmake --build .
 ```
 
 ### Run 
-The repository also includes a fully functional example that can be fiddled with, in ```bash src/main.cpp ```. After a successful build, run the executable:
+The repository also includes a fully functional example that can be fiddled with, in ```src/main.cpp ```. After a successful build, run the executable:
 
 ```bash
 ./build/src/neural
@@ -58,7 +61,7 @@ After a successful build, run the tests:
 
 ## Features
 
-## Core Tensor Engine
+### Core Tensor Engine
 
 The foundation of NeuralNet is a custom Tensor implementation capable of storing and manipulating numerical data.
 
@@ -80,3 +83,16 @@ Tensor b({4, 5, 6});
 
 Tensor c = a + b;
 ```
+## Project Architecture
+
+## Execution Flow
+
+### Tensor Creation
+### Forward Pass
+### Computational Graph Construction
+### Loss Computation
+### Topological Sorting
+### Backward Pass
+### Gradient Accumulation
+### Optimizer Step
+### Gradient Reset
