@@ -689,3 +689,12 @@ std::size_t Tensor::argmax() const {
   return std::distance(data().begin(),
                        std::max_element(data().begin(), data().end()));
 }
+
+void Tensor::set_data(const std::vector<float>& data) {
+  if (size() == data.size()) {
+    m_node->m_data = data;
+  } else {
+    throw std::runtime_error(
+        "set_data() failed, input data has different size");
+  }
+}
