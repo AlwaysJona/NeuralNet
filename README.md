@@ -42,7 +42,7 @@ cmake --build .
 ```
 
 ### Run 
-After a successful build, run the executable:
+The repository also includes a fully functional example that can be fiddled with, in ```bash src/main.cpp ```. After a successful build, run the executable:
 
 ```bash
 ./build/src/neural
