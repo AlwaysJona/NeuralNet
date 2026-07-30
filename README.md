@@ -10,11 +10,15 @@ The project is written in modern C++. It makes use of object-oriented programmin
 
 ---
 
+## Table of Contents
+
+- [Build and Run](#build-and-run)
+
 ## Build and Run
 ### Requirements
 - C++17 compatible compiler (GCC / Clang / MSVC)
 - CMake &ge; 3.10
-- Make (or Ninja, depending on your system)
+- Git (to download doctest) 
 
 ### Clone the repository
 ```bash
@@ -41,13 +45,13 @@ cmake --build .
 After a successful build, run the executable:
 
 ```bash
-./neural
+./build/src/neural
 ```
 ### Run Tests
 After a successful build, run the tests:
 
 ```bash
-./tests/tests
+./build/tests/tests
 ```
 
 ---
