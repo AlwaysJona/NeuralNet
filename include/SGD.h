@@ -9,7 +9,14 @@
 #include "Tensor.h"
 
 // Stochastic Gradient Descent: w_i+1 = w_i - LR * dL/dw_i
-// where LR = Learning Rate, L = Loss
+// where LR = Learning Rate, and L = Loss
+// After backpropagating the gradient up the tree, the 
+// Neural Network takes a step in the opposite direction as the
+// gradient, with the aim of moving towards a minimum of the 
+// Loss function
+//
+// Implementation in SGD.cpp
+
 class SGD {
  private:
   list<Node> m_params;

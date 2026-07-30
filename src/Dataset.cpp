@@ -23,6 +23,8 @@ int reverse_int(int i) {
 
 float convert_to_float(unsigned char px) { return (float)px / 255.0f; }
 
+// Reading images and saving them to Tensors, the output is a 
+// collection of 2D vectors, the values of each pixel
 std::vector<std::vector<std::vector<float>>> read_mnist(std::string path) {
   std::ifstream file(path, std::ios::binary);
   std::vector<std::vector<std::vector<float>>> dataset;
@@ -101,6 +103,9 @@ std::vector<std::vector<std::vector<float>>> read_mnist(
   return dataset;
 }
 
+// Reading labels and saving them to vectors,
+// The output is just a collection of integers,
+// corresponding to the label of each image
 std::vector<int> read_mnist_labels(std::string path) {
   std::ifstream file(path, std::ios::binary);
   std::vector<int> labels;

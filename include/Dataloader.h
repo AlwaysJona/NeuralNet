@@ -7,6 +7,11 @@
 
 #include "Dataset.h"
 
+// A Dataloader takes a Dataset object and prepares it for the neural network,
+// by shuffling its items, and setting batches of images to be processed
+//
+// Implementation in Dataloader.h
+
 class Dataloader {
  private:
   Dataset* m_dataset;
@@ -15,7 +20,18 @@ class Dataloader {
 
  public:
   Dataloader(Dataset* dataset, int batch_size, bool shuffle = true);
-
+  
+  // The iterator class implements a custom iteration method, such that
+  // if obj is a Dataloader object, the loop: 
+  //
+  // for(auto batch : obj) { ... }
+  //
+  // loops directly over a collection of images (but not all of them,
+  // just a few at once), and corresponding labels, and consequently:
+  //
+  // for(auto image : batch) { ... }
+  //
+  // loops over single images, and corresponding labels
   class Iterator {
    private:
     Dataloader* m_dataloader;

@@ -4,6 +4,15 @@
 #include "Module.h"
 #include "Tensor.h"
 
+// The Linear class implements a linear activation functions, such that
+// 
+// output = input*W + B
+//
+// where W is the Tensor of weigths, and B is a Bias Tensor
+// W and B are updated at each gradient descent step
+//
+// Implementation in Linear.cpp
+
 class Linear : public Module {
  private:
   Tensor m_weight;

@@ -11,6 +11,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
   // scalar
   if (input_t.shape().size() == 0) {
     float result = 1.0f;
+    // gradient logic
     if (input_t.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents{input};
       std::function<void(const std::vector<float>&)> gradfn =
@@ -25,7 +26,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     Tensor output(result);
     return output.node();
   }
-  // 1D
+  // 1D (no need for 2D as the output will already have been flattened)
   if (input_t.shape().size() == 1) {
     auto data = input_t.data();
     // max_val needed to prevent divergence
@@ -38,6 +39,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     for (auto& d : data) {
       s.push_back((std::exp(d - max_val)) / sum_exp);
     }
+    // gradient logic
     if (input_t.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents{input};
       std::function<void(const std::vector<float>&)> gradfn =

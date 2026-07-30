@@ -1,5 +1,6 @@
 #include "Tensor.h"
 
+// Helper function for the constructors
 std::size_t compute_stride(const std::vector<std::size_t>& shape) {
   std::size_t result;
 
@@ -18,6 +19,7 @@ std::size_t compute_stride(const std::vector<std::size_t>& shape) {
   return result;
 }
 
+// Scalar constructor
 Tensor::Node::Node(std::vector<float> data, std::vector<std::size_t> shape,
                    bool requires_grad)
     : m_data(std::move(data)),
@@ -42,6 +44,7 @@ Tensor::Tensor(const float data, bool requires_grad,
   m_node->m_parents = parents;
 }
 
+// 1D constuctor
 Tensor::Tensor(const std::vector<float>& data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
                std::vector<std::shared_ptr<Node>> parents) {
@@ -60,6 +63,7 @@ Tensor::Tensor(const std::vector<float>& data, bool requires_grad,
   m_node->m_parents = parents;
 }
 
+// 2D constructor
 Tensor::Tensor(const std::vector<std::vector<float>>& data, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
                std::vector<std::shared_ptr<Node>> parents) {
@@ -95,6 +99,7 @@ Tensor::Tensor(const std::vector<std::vector<float>>& data, bool requires_grad,
   m_node->m_parents = parents;
 }
 
+// Flat data constructor with explicit shape
 Tensor::Tensor(const std::vector<float>& data,
                const std::vector<std::size_t>& shape, bool requires_grad,
                std::function<void(const std::vector<float>&)> gradfn,
@@ -143,6 +148,7 @@ float& Tensor::item() {
   }
 }
 
+// 1D data access
 const float& Tensor::operator()(const std::size_t i) const {
   if (m_node->m_shape.size() == 0) {
     throw std::invalid_argument(
@@ -159,6 +165,7 @@ const float& Tensor::operator()(const std::size_t i) const {
   throw std::invalid_argument("Expected 1D tensor");
 }
 
+// overload for writing
 float& Tensor::operator()(const std::size_t i) {
   if (m_node->m_shape.size() == 0) {
     throw std::invalid_argument(
@@ -176,6 +183,7 @@ float& Tensor::operator()(const std::size_t i) {
       "Only one index given, can only index into a 1D Tensor");
 }
 
+// 2D data access
 const float& Tensor::operator()(const std::size_t i,
                                 const std::size_t j) const {
   // the operator should only be called on 2D tensors
@@ -194,6 +202,7 @@ const float& Tensor::operator()(const std::size_t i,
   }
 }
 
+// overload for writing
 float& Tensor::operator()(const std::size_t i, const std::size_t j) {
   if (m_node->m_shape.size() < 2) {
     throw std::invalid_argument(
@@ -326,6 +335,7 @@ Tensor Tensor::operator+(const Tensor& other) const {
   return out;
 }
 
+// element wise multiplication, not matrix multiplication
 Tensor Tensor::operator*(const Tensor& other) const {
   auto other_size = other.size();
   const bool this_scalar = m_node->m_shape.empty();
@@ -417,6 +427,7 @@ Tensor Tensor::operator-(const Tensor& other) const {
   return (*this) + Tensor(-1) * other;
 }
 
+// matrix multiplication
 Tensor Tensor::matmul(const Tensor& other) const {
   auto this_dims = m_node->m_shape.size();
   auto other_dims = other.shape().size();

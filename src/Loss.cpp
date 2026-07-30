@@ -33,6 +33,7 @@ std::shared_ptr<Node> NLL_Loss::forward(std::shared_ptr<Node> input,
   float prob = std::max(input_t(target), 1e-12f);
   float loss = -std::log(prob);
 
+  // gradient logic
   if (input_t.requires_grad()) {
     std::vector<std::shared_ptr<Node>> parents{input};
     std::function<void(const std::vector<float>&)> gradfn =

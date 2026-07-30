@@ -6,6 +6,11 @@
 
 #include "Tensor.h"
 
+// Utility functions to save and load pre-trained models
+// Not used to read MNIST data
+//
+// Implementation in Serialization.cpp
+
 using Node = Tensor::Node;
 
 void save(

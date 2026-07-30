@@ -8,8 +8,8 @@
 Dataloader::Dataloader(Dataset *dataset, int batch_size, bool shuffle)
     : m_dataset(dataset), m_batch_size(batch_size) {
   m_indices.resize(m_dataset->get_length());
-  // populate m_indices vector with indices starting from 0 up to length of
-  // dataset - 1
+  // std::iota: populate m_indices vector with indices starting from 0 
+  // up to length of dataset - 1
   std::iota(m_indices.begin(), m_indices.end(), 0);
   if (shuffle) {
     std::random_device rd;
