@@ -73,7 +73,9 @@ After a successful build, run the tests:
 ```bash
 ./build/tests/tests
 ```
-
+<p align="center">
+  <img src="/images/test.jpeg" width="250">
+</p>
 [Back to top](#neuralnet)
 
 
