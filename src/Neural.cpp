@@ -83,8 +83,9 @@ void test(Dataloader& dataloader, NeuralNetwork& model,
   float accuracy = static_cast<float>(correct) / static_cast<float>(n_samples);
   float avg_loss = running_loss / n_samples;
 
-  std::cout << std::fixed << std::setprecision(1) << accuracy * 100.0 << "%\n"
-            << " avg loss: " << std::setprecision(6) << avg_loss << "\n";
+  std::cout << "Accuracy " << std::fixed << std::setprecision(1)
+            << accuracy * 100.0 << "%\n"
+            << "Avg loss: " << std::setprecision(6) << avg_loss << "\n";
 }
 
 void train_new_mnist_model(const bool impose_limit, const int size_limit) {
