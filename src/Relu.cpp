@@ -12,7 +12,7 @@ std::shared_ptr<Node> Relu::forward(std::shared_ptr<Node> input) {
   auto shape = t_input.shape();
   // Scalar
   if (shape.size() == 0) {
-    float result = std::max(std::abs(t_input.item()), 0.0f);
+    float result = std::max(t_input.item(), 0.0f);
     // gradient logic
     if (t_input.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents = {t_input.node()};
@@ -36,7 +36,7 @@ std::shared_ptr<Node> Relu::forward(std::shared_ptr<Node> input) {
   if (shape.size() == 1) {
     std::vector<float> result;
     for (auto d : t_input.data()) {
-      result.push_back(std::max(std::abs(d), 0.0f));
+      result.push_back(std::max(d, 0.0f));
     }
     // gradient logic
     if (t_input.requires_grad()) {
@@ -63,7 +63,7 @@ std::shared_ptr<Node> Relu::forward(std::shared_ptr<Node> input) {
   else {
     std::vector<float> result;
     for (auto d : t_input.data()) {
-      result.push_back(std::max(std::abs(d), 0.0f));
+      result.push_back(std::max(d, 0.0f));
     }
     // gradient logic
     if (t_input.requires_grad()) {

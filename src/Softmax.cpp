@@ -64,4 +64,6 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     Tensor output(s);
     return output.node();
   }
+  throw std::invalid_argument(
+    "Softmax only supports scalar and 1D tensors");
 }

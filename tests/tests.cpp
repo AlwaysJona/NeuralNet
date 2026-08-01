@@ -1,7 +1,12 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include <doctest/doctest.h>
 
+#include "Linear.h"
+#include "Module.h"
 #include "Tensor.h"
+#include "Relu.h"
+#include "Softmax.h"
+#include "Loss.h"
 
 TEST_CASE("Testing proper creation of Tensors") {
   // scalar
@@ -482,4 +487,453 @@ TEST_CASE("matmul autograd 2D x 2D") {
   CHECK_EQ(B.grad()[3], doctest::Approx(7.0f));
   CHECK_EQ(B.grad()[4], doctest::Approx(9.0f));
   CHECK_EQ(B.grad()[5], doctest::Approx(9.0f));
+}
+
+TEST_CASE("Linear layer creation") {
+  Linear layer(3, 2);
+
+  auto params = layer.parameters();
+
+  CHECK_EQ(params.size(), std::size_t(2));
+
+  CHECK_EQ(params[0].first, "weight");
+  CHECK_EQ(params[1].first, "bias");
+
+  Tensor weight(params[0].second);
+  Tensor bias(params[1].second);
+
+  CHECK_EQ(weight.shape(), std::vector<std::size_t>({3, 2}));
+
+  CHECK_EQ(bias.shape(), std::vector<std::size_t>({2}));
+
+  CHECK_EQ(weight.size(), std::size_t(6));
+  CHECK_EQ(bias.size(), std::size_t(2));
+}
+
+TEST_CASE("Linear Kaiming initialization") {
+  Linear layer(4, 3, 42);
+
+  auto params = layer.parameters();
+
+  Tensor weight(params[0].second);
+
+  // Check weights are not all zero
+
+  bool non_zero = false;
+
+  for (std::size_t i = 0; i < 4; i++) {
+    for (std::size_t j = 0; j < 3; j++) {
+      if (weight(i, j) != 0.0f) {
+        non_zero = true;
+      }
+    }
+  }
+
+  CHECK(non_zero);
+
+  // Check values are inside Kaiming uniform range
+
+  float bound = std::sqrt(6.0f / 4.0f);
+
+  for (std::size_t i = 0; i < 4; i++) {
+    for (std::size_t j = 0; j < 3; j++) {
+      CHECK(weight(i, j) <= bound);
+      CHECK(weight(i, j) >= -bound);
+    }
+  }
+}
+
+TEST_CASE("Linear forward pass") {
+  Linear layer(3, 2);
+
+  auto params = layer.parameters();
+
+  Tensor weight(params[0].second);
+  Tensor bias(params[1].second);
+
+  /*
+      Weight:
+
+      |1 2|
+      |3 4|
+      |5 6|
+
+      Bias:
+
+      |10 20|
+  */
+
+  weight(0, 0) = 1;
+  weight(0, 1) = 2;
+  weight(1, 0) = 3;
+  weight(1, 1) = 4;
+  weight(2, 0) = 5;
+  weight(2, 1) = 6;
+
+  bias(0) = 10;
+  bias(1) = 20;
+
+  Tensor input(std::vector<float>{1, 2, 3});
+  Tensor output(layer.forward(input.node()));
+
+  CHECK_EQ(output.shape(), std::vector<std::size_t>({2}));
+
+  /*
+      output:
+
+      y0 = 1*1 + 2*3 + 3*5 + 10 = 32
+
+      y1 = 1*2 + 2*4 + 3*6 + 20 = 48
+  */
+
+  CHECK_EQ(output(0), doctest::Approx(32));
+  CHECK_EQ(output(1), doctest::Approx(48));
+}
+
+TEST_CASE("ReLU scalar") {
+  Relu relu;
+
+  // Negative scalar
+  Tensor t1(-3.5f);
+  Tensor out1(relu.forward(t1.node()));
+  CHECK_EQ(out1.item(), doctest::Approx(0.0));
+
+  // Zero
+  Tensor t2(0.0f);
+  Tensor out2(relu.forward(t2.node()));
+  CHECK_EQ(out2.item(), doctest::Approx(0.0));
+
+  // Positive scalar
+  Tensor t3(4.2f);
+  Tensor out3(relu.forward(t3.node()));
+  CHECK_EQ(out3.item(), doctest::Approx(4.2));
+}
+
+TEST_CASE("ReLU 1D Tensor") {
+  Relu relu;
+
+  Tensor input(std::vector<float>{-4, -1, 0, 2, 5});
+
+  Tensor output(relu.forward(input.node()));
+
+  CHECK_EQ(output.shape(), std::vector<std::size_t>({5}));
+
+  CHECK_EQ(output(0), doctest::Approx(0));
+  CHECK_EQ(output(1), doctest::Approx(0));
+  CHECK_EQ(output(2), doctest::Approx(0));
+  CHECK_EQ(output(3), doctest::Approx(2));
+  CHECK_EQ(output(4), doctest::Approx(5));
+}
+
+TEST_CASE("ReLU 2D Tensor") {
+  Relu relu;
+
+  Tensor input(std::vector<std::vector<float>>{
+      {-1, 2, -3},
+      {4, -5, 6}
+  });
+
+  Tensor output(relu.forward(input.node()));
+
+  CHECK_EQ(output.shape(), std::vector<std::size_t>({2, 3}));
+
+  CHECK_EQ(output(0, 0), doctest::Approx(0));
+  CHECK_EQ(output(0, 1), doctest::Approx(2));
+  CHECK_EQ(output(0, 2), doctest::Approx(0));
+
+  CHECK_EQ(output(1, 0), doctest::Approx(4));
+  CHECK_EQ(output(1, 1), doctest::Approx(0));
+  CHECK_EQ(output(1, 2), doctest::Approx(6));
+}
+
+TEST_CASE("ReLU preserves tensor shape") {
+  Relu relu;
+
+  Tensor input(std::vector<std::vector<float>>{
+      {-1, -2},
+      {3, 4},
+      {5, -6}
+  });
+
+  Tensor output(relu.forward(input.node()));
+
+  CHECK_EQ(output.shape(), input.shape());
+  CHECK_EQ(output.size(), input.size());
+}
+
+TEST_CASE("ReLU does not modify input Tensor") {
+  Relu relu;
+
+  Tensor input(std::vector<float>{-2, 3, -4});
+
+  Tensor output(relu.forward(input.node()));
+
+  // Original tensor remains unchanged
+  CHECK_EQ(input(0), doctest::Approx(-2));
+  CHECK_EQ(input(1), doctest::Approx(3));
+  CHECK_EQ(input(2), doctest::Approx(-4));
+
+  // Output is activated
+  CHECK_EQ(output(0), doctest::Approx(0));
+  CHECK_EQ(output(1), doctest::Approx(3));
+  CHECK_EQ(output(2), doctest::Approx(0));
+}
+
+TEST_CASE("ReLU boundary values") {
+  Relu relu;
+
+  Tensor input(std::vector<float>{-0.001f, 0.0f, 0.001f});
+
+  Tensor output(relu.forward(input.node()));
+
+  CHECK_EQ(output(0), doctest::Approx(0.0));
+  CHECK_EQ(output(1), doctest::Approx(0.0));
+  CHECK_EQ(output(2), doctest::Approx(0.001));
+}
+
+TEST_CASE("Softmax scalar") {
+  Softmax softmax;
+
+  Tensor input(3.14f);
+
+  Tensor output(softmax.forward(input.node()));
+
+  CHECK_EQ(output.shape(), std::vector<std::size_t>({}));
+  CHECK_EQ(output.item(), doctest::Approx(1.0));
+}
+
+TEST_CASE("Softmax 1D Tensor") {
+  Softmax softmax;
+
+  Tensor input(std::vector<float>{1, 2, 3});
+
+  Tensor output(softmax.forward(input.node()));
+
+  CHECK_EQ(output.shape(), std::vector<std::size_t>({3}));
+
+  CHECK_EQ(output(0), doctest::Approx(0.0900306));
+  CHECK_EQ(output(1), doctest::Approx(0.244728));
+  CHECK_EQ(output(2), doctest::Approx(0.665241));
+
+  float sum = output(0) + output(1) + output(2);
+  CHECK_EQ(sum, doctest::Approx(1.0));
+}
+
+TEST_CASE("Softmax identical inputs") {
+  Softmax softmax;
+
+  Tensor input(std::vector<float>{5, 5, 5, 5});
+
+  Tensor output(softmax.forward(input.node()));
+
+  CHECK_EQ(output(0), doctest::Approx(0.25));
+  CHECK_EQ(output(1), doctest::Approx(0.25));
+  CHECK_EQ(output(2), doctest::Approx(0.25));
+  CHECK_EQ(output(3), doctest::Approx(0.25));
+}
+
+TEST_CASE("Softmax probabilities are between zero and one") {
+  Softmax softmax;
+
+  Tensor input(std::vector<float>{-5, -1, 0, 3, 10});
+
+  Tensor output(softmax.forward(input.node()));
+
+  for (std::size_t i = 0; i < output.size(); ++i) {
+    CHECK(output(i) >= 0.0f);
+    CHECK(output(i) <= 1.0f);
+  }
+}
+
+TEST_CASE("Softmax probabilities sum to one") {
+  Softmax softmax;
+
+  Tensor input(std::vector<float>{-10, 2, 7, 1, 5});
+
+  Tensor output(softmax.forward(input.node()));
+
+  float sum = 0.0f;
+
+  for (std::size_t i = 0; i < output.size(); ++i)
+    sum += output(i);
+
+  CHECK_EQ(sum, doctest::Approx(1.0));
+}
+
+TEST_CASE("Softmax preserves tensor shape") {
+  Softmax softmax;
+
+  Tensor input(std::vector<float>{1, 2, 3, 4, 5});
+
+  Tensor output(softmax.forward(input.node()));
+
+  CHECK_EQ(output.shape(), input.shape());
+  CHECK_EQ(output.size(), input.size());
+}
+
+TEST_CASE("NLL Loss basic") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.1f, 0.2f, 0.7f});
+
+  Tensor output(loss.forward(input.node(), 2));
+
+  CHECK_EQ(output.item(), doctest::Approx(-std::log(0.7f)));
+}
+
+TEST_CASE("NLL Loss different targets") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.2f, 0.3f, 0.5f});
+
+  Tensor out0(loss.forward(input.node(), 0));
+  Tensor out1(loss.forward(input.node(), 1));
+  Tensor out2(loss.forward(input.node(), 2));
+
+  CHECK_EQ(out0.item(), doctest::Approx(-std::log(0.2f)));
+  CHECK_EQ(out1.item(), doctest::Approx(-std::log(0.3f)));
+  CHECK_EQ(out2.item(), doctest::Approx(-std::log(0.5f)));
+}
+
+TEST_CASE("NLL Loss probability one") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.0f, 1.0f, 0.0f});
+
+  Tensor output(loss.forward(input.node(), 1));
+
+  CHECK_EQ(output.item(), doctest::Approx(0.0));
+}
+
+TEST_CASE("NLL Loss input unchanged") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.2f, 0.8f});
+
+  Tensor output(loss.forward(input.node(), 1));
+
+  CHECK_EQ(input(0), doctest::Approx(0.2));
+  CHECK_EQ(input(1), doctest::Approx(0.8));
+}
+
+TEST_CASE("NLL Loss rejects scalar") {
+  NLL_Loss loss;
+
+  Tensor input(1.0f);
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(), 0),
+      std::runtime_error);
+}
+
+TEST_CASE("NLL Loss rejects 2D Tensor") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<std::vector<float>>{
+      {0.1f,0.9f},
+      {0.3f,0.7f}
+  });
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),0),
+      std::runtime_error);
+}
+
+TEST_CASE("NLL Loss rejects invalid target") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.2f,0.8f});
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),2),
+      std::runtime_error);
+}
+
+TEST_CASE("Cross Entropy Loss basic") {
+  Cross_Entropy_Loss loss;
+
+  Tensor logits(std::vector<float>{1.0f,2.0f,3.0f});
+
+  Tensor output(loss.forward(logits.node(),2));
+
+  float expected =
+      -std::log(std::exp(3.0f) /
+                (std::exp(1.0f)+std::exp(2.0f)+std::exp(3.0f)));
+
+  CHECK_EQ(output.item(), doctest::Approx(expected));
+}
+
+TEST_CASE("Cross Entropy equals Softmax plus NLL") {
+  Cross_Entropy_Loss ce;
+  Softmax softmax;
+  NLL_Loss nll;
+
+  Tensor logits(std::vector<float>{2,4,1});
+
+  Tensor ce_loss(ce.forward(logits.node(),1));
+
+  Tensor probs(softmax.forward(logits.node()));
+
+  Tensor nll_loss(nll.forward(probs.node(),1));
+
+  CHECK_EQ(ce_loss.item(),
+           doctest::Approx(nll_loss.item()));
+}
+
+TEST_CASE("Cross Entropy rejects scalar") {
+  Cross_Entropy_Loss loss;
+
+  Tensor input(5);
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),0),
+      std::runtime_error);
+}
+
+TEST_CASE("Cross Entropy rejects 2D Tensor") {
+  Cross_Entropy_Loss loss;
+
+  Tensor input(std::vector<std::vector<float>>{
+      {1,2},
+      {3,4}
+  });
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),0),
+      std::runtime_error);
+}
+
+TEST_CASE("Cross Entropy rejects invalid target") {
+  Cross_Entropy_Loss loss;
+
+  Tensor input(std::vector<float>{1,2,3});
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),5),
+      std::runtime_error);
+}
+
+TEST_CASE("Loss base class throws") {
+  Loss loss;
+
+  Tensor input(std::vector<float>{0.2f,0.8f});
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node()),
+      std::runtime_error);
+
+  CHECK_THROWS_AS(
+      loss.forward(input.node(),0),
+      std::runtime_error);
+}
+
+TEST_CASE("NLL Loss handles zero probability") {
+  NLL_Loss loss;
+
+  Tensor input(std::vector<float>{0.0f, 1.0f});
+
+  Tensor output(loss.forward(input.node(), 0));
+
+  CHECK(std::isfinite(output.item()));
+  CHECK(output.item() > 20.0f);
 }
