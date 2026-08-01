@@ -67,6 +67,11 @@ The repository also includes a fully functional example that can be fiddled with
 ```bash
 ./build/src/neural
 ```
+<p align="center">
+  <img src="images/excecution1.jpeg" width="300">
+  <img src="images/excecution2.jpeg" width="232">
+</p>
+
 ### Run Tests
 After a successful build, run the tests:
 
@@ -74,7 +79,7 @@ After a successful build, run the tests:
 ./build/tests/tests
 ```
 <p align="center">
-  <img src="/images/test.jpeg" width="250">
+  <img src="images/tests.jpeg" width="7000">
 </p>
 [Back to top](#neuralnet)
 
