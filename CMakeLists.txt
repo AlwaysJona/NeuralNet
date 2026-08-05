@@ -1,6 +1,6 @@
 # Minimum version of CMake required to build this project. 3.14 is needed for
 # FetchContent_MakeAvailable, which we use to download doctest.
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.14...4.0)
 
 # Names the project. This also sets the variable ${PROJECT_NAME} to
 # "NeuralNetwork" and ${PROJECT_SOURCE_DIR} to the directory this file lives in.
@@ -36,6 +36,11 @@ add_subdirectory(src)
 # Tells CMake to go into the tests/ directory and process the CMakeLists.txt
 # there.
 add_subdirectory(tests)
+
+
+# Tells CMake to go into the bindings/ directory and process the CMakeLists.txt
+# there.
+add_subdirectory(bindings)
 
 file(COPY ${PROJECT_SOURCE_DIR}/data
      DESTINATION ${PROJECT_BINARY_DIR})

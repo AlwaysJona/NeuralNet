@@ -1,6 +1,6 @@
 # Creates a library target called "Tensor" compiled from Tensor.cpp.
 # A library is a bundle of compiled code that other targets (like executables) can link against.
-add_library(NeuralNetworkLib
+add_library(NeuralNetworkLib SHARED
     Tensor.cpp
     Module.cpp
     Linear.cpp

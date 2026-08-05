@@ -35,8 +35,12 @@ class NeuralNetwork : public Module {
 
  public:
   NeuralNetwork();
+  // overload when pre-trained model available
+  NeuralNetwork(std::string model_path);
 
   std::shared_ptr<Node> forward(std::shared_ptr<Node> input);
+  // overload for vec input and output
+  std::vector<float> forward(const std::vector<float>& input);
 };
 
 // takes output from last layer, computes loss, propagates it up the tree

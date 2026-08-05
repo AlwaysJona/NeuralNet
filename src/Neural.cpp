@@ -12,6 +12,14 @@ NeuralNetwork::NeuralNetwork() {
   register_module("linear_3", m_lin3);
 }
 
+NeuralNetwork::NeuralNetwork(std::string model_path){
+    register_module("linear_1", m_lin1);
+    register_module("linear_2", m_lin2);
+    register_module("linear_3", m_lin3);
+    auto state_dict = load(model_path);
+    load_state_dict(state_dict);
+}
+
 std::shared_ptr<Node> NeuralNetwork::forward(std::shared_ptr<Node> input) {
   Tensor t_input(std::move(input));
   std::shared_ptr<Node> flat = (*m_flatten)(t_input.node());
@@ -21,6 +29,17 @@ std::shared_ptr<Node> NeuralNetwork::forward(std::shared_ptr<Node> input) {
   std::shared_ptr<Node> relu_2 = (*m_relu)(linear_2);
   std::shared_ptr<Node> linear_3 = (*m_lin3)(relu_2);
   return linear_3;
+}
+
+std::vector<float> NeuralNetwork::forward(const std::vector<float>& input){
+    std::size_t pixel_count = 28 * 28;
+    if(input.size() != pixel_count){
+        throw std::runtime_error("Single image input does not have appropriate size\n");
+    }
+    Tensor input_t(input);
+    Tensor output_t(forward(input_t.node()));
+    auto out = Softmax::softmax(output_t.data());
+    return out;
 }
 
 void train(Dataloader& dataloader, NeuralNetwork& model,

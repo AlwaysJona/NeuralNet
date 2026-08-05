@@ -1,10 +1,23 @@
-#include "Softmax.h"
-
 #include <algorithm>
 #include <memory>
 #include <random>
 
+#include "Softmax.h"
 #include "Tensor.h"
+
+std::vector<float> Softmax::softmax(const std::vector<float>& data) {
+  float max_val = *(std::max_element(data.begin(), data.end()));
+  std::vector<float> s;
+  float sum_exp = 0.0f;
+  for (auto& d : data) {
+    sum_exp += std::exp(d - max_val);
+  }
+  for (auto& d : data) {
+    s.push_back((std::exp(d - max_val)) / sum_exp);
+  }
+
+  return s;
+}
 
 std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
   Tensor input_t(input);
@@ -29,16 +42,7 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
   // 1D (no need for 2D as the output will already have been flattened)
   if (input_t.shape().size() == 1) {
     auto data = input_t.data();
-    // max_val needed to prevent divergence
-    float max_val = *(std::max_element(data.begin(), data.end()));
-    std::vector<float> s;
-    float sum_exp = 0.0f;
-    for (auto& d : data) {
-      sum_exp += std::exp(d - max_val);
-    }
-    for (auto& d : data) {
-      s.push_back((std::exp(d - max_val)) / sum_exp);
-    }
+    std::vector<float> s = softmax(data);
     // gradient logic
     if (input_t.requires_grad()) {
       std::vector<std::shared_ptr<Node>> parents{input};
@@ -64,6 +68,5 @@ std::shared_ptr<Node> Softmax::forward(std::shared_ptr<Node> input) {
     Tensor output(s);
     return output.node();
   }
-  throw std::invalid_argument(
-    "Softmax only supports scalar and 1D tensors");
+  throw std::invalid_argument("Softmax only supports scalar and 1D tensors");
 }
