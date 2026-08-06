@@ -60,7 +60,7 @@ void dataset_loading_test(const bool impose_limit,
 }
 
 int main() {
-  int size_limit = 1000;  // Number of samples to train on and to test on.
+  int size_limit = 60000;  // Number of samples to train on and to test on.
                           // The higher the number, the longer the program is
                           // going to take, and the more accurate the model will be.
                           // WARNING: the full MNIST dataset contains 60k images,
@@ -72,7 +72,7 @@ int main() {
   bool impose_limit = true;  // True if you'd like to apply the above size limit 
                              // to the model
                              
-  bool use_pre_trained = true; // True if you'd like to use the accurate pre-trained
+  bool use_pre_trained = false; // True if you'd like to use the accurate pre-trained
                                // model, trained on 60k images
 
   // dataset_loading_test(impose_limit, size_limit);

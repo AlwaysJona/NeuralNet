@@ -125,7 +125,7 @@ void train_new_mnist_model(const bool impose_limit, const int size_limit) {
   float learning_rate = 0.001f;
   SGD optimizer(model.parameters(), learning_rate);
 
-  int n_epochs = 1;
+  int n_epochs = 2;
   for (int epoch = 0; epoch < n_epochs; ++epoch) {
     std::cout << "[Epoch " << epoch << "/" << n_epochs << "] Training\n";
     train(train_dataloader, model, loss_fn, optimizer);
